@@ -1,0 +1,71 @@
+# PostgREST для AI Readiness Diagnostic.
+# База вже є в кластері (codis-pg-rw), тож піднімається лише API.
+#
+#   kubectl -n codis-infra create secret generic ard-postgrest \
+#     --from-literal=PGRST_DB_URI='postgres://authenticator:ПАРОЛЬ@codis-pg-rw:5432/poll'
+#   kubectl -n codis-infra apply -f deploy/k8s-postgrest.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ard-postgrest
+  labels: { app: ard-postgrest }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ard-postgrest }
+  template:
+    metadata:
+      labels: { app: ard-postgrest }
+    spec:
+      containers:
+        - name: postgrest
+          image: postgrest/postgrest:v12.2.3
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: PGRST_DB_URI
+              valueFrom: { secretKeyRef: { name: ard-postgrest, key: PGRST_DB_URI } }
+            - { name: PGRST_DB_SCHEMA,   value: diagnostic }
+            - { name: PGRST_DB_ANON_ROLE, value: web_anon }
+            - { name: PGRST_SERVER_PORT, value: "3000" }
+            - { name: PGRST_DB_POOL,     value: "10" }
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ard-postgrest
+spec:
+  selector: { app: ard-postgrest }
+  ports: [{ port: 80, targetPort: 3000 }]
+---
+# Ingress: домен і клас підставити під наявний кластер.
+# Сторінка живе на https, тому API теж мусить бути під сертифікатом —
+# інакше браузер заблокує запит як змішаний вміст.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ard-postgrest
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "POST, OPTIONS"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ard-api.codis.dev]
+      secretName: ard-api-tls
+  rules:
+    - host: ard-api.codis.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ard-postgrest
+                port: { number: 80 }
