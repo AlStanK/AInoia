@@ -21,10 +21,15 @@ end $$;
 
 grant usage  on schema diagnostic     to anonymous;
 grant insert on diagnostic.responses  to anonymous;
+grant insert on diagnostic.contacts   to anonymous;
 
 -- RLS увімкнено в schema.sql; політика для anonymous — така сама, як anon_insert для web_anon.
 drop policy if exists anonymous_insert on diagnostic.responses;
 create policy anonymous_insert on diagnostic.responses
+  for insert to anonymous with check (true);
+
+drop policy if exists anonymous_insert on diagnostic.contacts;
+create policy anonymous_insert on diagnostic.contacts
   for insert to anonymous with check (true);
 
 -- Роль authenticated (JWT-користувачі Neon Auth) тут не використовується:

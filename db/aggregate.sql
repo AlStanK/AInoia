@@ -15,14 +15,17 @@ select r.*,
        coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org
 from diagnostic.responses r;
 
--- Кандидати на злиття: різні написання, схожі ключі
+-- Кандидати на злиття: різні коди, але схожа назва організації.
+-- Так буває, коли колега не отримав посилання-запрошення і сторінка
+-- згенерувала йому власний код.
 create or replace view diagnostic.v_org_duplicates as
 select a.org_key as key_a, min(a.org_name) as name_a,
        b.org_key as key_b, min(b.org_name) as name_b
 from diagnostic.responses a
 join diagnostic.responses b
   on a.org_key < b.org_key
- and (b.org_key like a.org_key || '%' or a.org_key like b.org_key || '%')
+ and (diagnostic.org_key(b.org_name) like diagnostic.org_key(a.org_name) || '%'
+   or diagnostic.org_key(a.org_name) like diagnostic.org_key(b.org_name) || '%')
 group by a.org_key, b.org_key;
 
 -- ---------------------------------------------------------------------------
