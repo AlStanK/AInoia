@@ -253,8 +253,9 @@ const AUTH_URL = "https://ep-orange-flower-b29e9zvj.neonauth.c-6.eu-central-1.aw
 
 /* Повідомлення про обробку даних. CONSENT_VERSION змінювати щоразу, коли
    змінюється текст privacyHtml(): версія зберігається разом зі згодою. */
-const CONTACT_EMAIL   = "hello@ainoia.ai";
-const CONSENT_VERSION = "2026-09-03";
+const CONTROLLER      = "CodisLab, LLC";
+const CONTACT_EMAIL   = "ainoia@codislab.com";
+const CONSENT_VERSION = "2026-09-03b";
 const RETENTION_TEXT  = "12 місяців після завершення діагностики організації";
 const VERSION = "1.2";
 
@@ -789,7 +790,7 @@ function privacyHtml(){
   return `<details class="privacy">
     <summary>Як обробляються ваші відповіді</summary>
     <ul>
-      <li><strong>Хто обробляє.</strong> AInoia, контакт: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</li>
+      <li><strong>Хто обробляє.</strong> ${CONTROLLER} (бренд AInoia), контакт: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</li>
       <li><strong>Що збирається.</strong> Назва організації, ваша роль і функція, відповіді на
         питання анкети, час заповнення. Email — лише якщо ви самі вкажете його наприкінці.</li>
       <li><strong>Навіщо.</strong> Щоб звести відповіді представників різних функцій в
