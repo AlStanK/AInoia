@@ -3,3 +3,4 @@ deploy/.env
 *.local
 .DS_Store
 deploy/*.env
+.neon

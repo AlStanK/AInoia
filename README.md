@@ -49,7 +49,7 @@
 | Код | `github.com/AlStanK/AInoia` | main = канон, зміни через PR |
 | Сторінка | `https://alstank.github.io/AInoia/` | публікує `.github/workflows/pages.yml` (лише `index.html` + `assets/`) |
 | База | Neon, проєкт AInoia (`eu-central-1`), база `poll`, схема `diagnostic` | накочено `db/schema.sql`, `aggregate.sql`, `gates.sql` |
-| API | Neon Data API для бази `poll` | `…/poll/rest/v1`, роль анонімних запитів `anonymous` |
+| API | Neon Data API для бази `poll` | `https://ep-orange-flower-b29e9zvj.apirest.c-6.eu-central-1.aws.neon.tech/poll/rest/v1`, анонімні запити → роль `anonymous`; Neon Auth: `https://ep-orange-flower-b29e9zvj.neonauth.c-6.eu-central-1.aws.neon.tech/poll/auth` |
 
 ### 1. База (Neon)
 
@@ -92,8 +92,8 @@ Neon Data API не приймає запити без JWT, навіть анон
 У `index.html` на початку скрипта:
 
 ```js
-const API_URL  = "https://<endpoint>.apirest.<region>.aws.neon.tech/poll/rest/v1";
-const AUTH_URL = "https://<neon-auth-base-url>";
+const API_URL  = "https://ep-orange-flower-b29e9zvj.apirest.c-6.eu-central-1.aws.neon.tech/poll/rest/v1";
+const AUTH_URL = "https://ep-orange-flower-b29e9zvj.neonauth.c-6.eu-central-1.aws.neon.tech/poll/auth";
 ```
 
 Порожній `API_URL` = локальний режим: сторінка працює, але нічого не надсилає й пропонує
