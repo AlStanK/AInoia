@@ -616,6 +616,7 @@ function inviteLink(){
   return location.origin + location.pathname + "?org=" + S.code;
 }
 let step = -1;                       // -1 = титульна, STEPS.length = результат
+let renderedStep = null;             // останній намальований крок — прокрутка вгору лише при зміні кроку
 let showedErrors = false;
 
 const $  = s => document.querySelector(s);
@@ -835,7 +836,8 @@ function render(){
     </div>`;
 
   bind();
-  window.scrollTo({top:0, behavior:"instant"});
+  if (renderedStep !== step) window.scrollTo({top:0, behavior:"instant"});
+  renderedStep = step;
 }
 
 function bind(){
