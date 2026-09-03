@@ -22,7 +22,9 @@
 | `db/aggregate.sql` | Агрегація §5–§8: групові середні, enterprise aggregate, Alignment, Confidence, evidence-статуси. |
 | `db/gates.sql` | Гейти Evolution Path §9 і підсумкове представлення `v_org_result`. |
 | `db/fixture.sql` | DEV-ONLY: синтетична організація для перевірки аналітики. У продакшн не застосовувати. |
-| `deploy/` | PostgREST: роль `authenticator`, маніфести k8s, приклад `.env`. |
+| `db/neon-grants.sql` | Insert-only права ролі `anonymous` для Neon Data API (після увімкнення Data API). |
+| `.github/workflows/pages.yml` | Публікація лише статики на GitHub Pages. |
+| `deploy/` | `postgrest.local.conf` для локальної перевірки; k8s-варіант (`k8s-postgrest.yaml`, `roles.sql`) як альтернатива. |
 
 ## Що рахує сторінка, а що база
 
@@ -39,42 +41,91 @@
 
 ## Розгортання
 
-### 1. База
+Продакшн-схема: **сторінка на GitHub Pages, база й API у Neon**. Свій PostgREST не
+потрібен: Neon Data API — це керований PostgREST поверх тієї ж бази.
 
-База `poll` уже існує в кластері. Схема `diagnostic` ізольована від решти її вмісту.
+| Шар | Де | Стан |
+|---|---|---|
+| Код | `github.com/AlStanK/AInoia` | main = канон, зміни через PR |
+| Сторінка | `https://alstank.github.io/AInoia/` | публікує `.github/workflows/pages.yml` (лише `index.html` + `assets/`) |
+| База | Neon, проєкт AInoia (`eu-central-1`), база `poll`, схема `diagnostic` | накочено `db/schema.sql`, `aggregate.sql`, `gates.sql` |
+| API | Neon Data API для бази `poll` | `…/poll/rest/v1`, роль анонімних запитів `anonymous` |
 
-```bash
-export ARD_DB_URL='postgres://ПОЛЬЗУВАЧ:ПАРОЛЬ@codis-pg-rw.codis-infra.svc.cluster.local:5432/poll'
+### 1. База (Neon)
 
-psql "$ARD_DB_URL" -v pw="'ПАРОЛЬ_AUTHENTICATOR'" -f deploy/roles.sql
-psql "$ARD_DB_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
-psql "$ARD_DB_URL" -v ON_ERROR_STOP=1 -f db/aggregate.sql
-psql "$ARD_DB_URL" -v ON_ERROR_STOP=1 -f db/gates.sql
-```
-
-Адреса кластерна, тож команди виконуються зсередини кластера або через
-`kubectl port-forward -n codis-infra svc/codis-pg-rw 5432:5432`.
-
-### 2. API
+Пряме підключення власника (`DATABASE_URL` — див. `~/.claude/secrets-registry.md`, у git не потрапляє):
 
 ```bash
-kubectl -n codis-infra create secret generic ard-postgrest \
-  --from-literal=PGRST_DB_URI='postgres://authenticator:ПАРОЛЬ@codis-pg-rw:5432/poll'
-kubectl -n codis-infra apply -f deploy/k8s-postgrest.yaml
+psql "$DATABASE_URL" -c 'create database poll'
+export POLL_URL="${DATABASE_URL/\/neondb/\/poll}"   # та сама адреса, база poll
+psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
+psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/aggregate.sql
+psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/gates.sql
 ```
+
+`db/fixture.sql` — лише для локальної перевірки аналітики, у продакшн не застосовувати.
+
+### 2. API (Neon Data API)
+
+Data API увімкнути для бази `poll` (консоль → Data API, або `neon data-api create`) з
+Neon Auth як провайдером JWT. Потрібні налаштування: схема `diagnostic`, анонімна роль
+`anonymous`, CORS на домен сторінки, OpenAPI вимкнено:
+
+```bash
+neon data-api create --database poll --auth-provider neon_auth \
+  --db-schemas diagnostic --db-anon-role anonymous --openapi-mode disabled \
+  --server-cors-allowed-origins https://alstank.github.io
+```
+
+Після цього роль `anonymous` існує в базі — дати їй insert-only права:
+
+```bash
+psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/neon-grants.sql
+```
+
+Neon Data API не приймає запити без JWT, навіть анонімні. Тому сторінка перед
+відправкою бере короткоживучий анонімний токен у Neon Auth (`GET AUTH_URL/token/anonymous`)
+і кладе його в `Authorization: Bearer`.
 
 ### 3. Сторінка
 
 У `index.html` на початку скрипта:
 
 ```js
-const API_URL = "https://ard-api.codis.dev";
+const API_URL  = "https://<endpoint>.apirest.<region>.aws.neon.tech/poll/rest/v1";
+const AUTH_URL = "https://<neon-auth-base-url>";
 ```
 
-Порожній рядок = локальний режим: сторінка працює, але нічого не надсилає й пропонує
-вивантажити JSON. Зручно для демонстрації клієнту без збору даних.
+Порожній `API_URL` = локальний режим: сторінка працює, але нічого не надсилає й пропонує
+вивантажити JSON. Зручно для демонстрації клієнту без збору даних. Порожній `AUTH_URL` =
+токен не береться (звичайний PostgREST з анонімною роллю, як у локальній перевірці).
 
-Хостинг — будь-яка статика під HTTPS. Сторінка позначена `noindex`.
+Merge у `main` → workflow публікує сторінку на Pages. Сторінка позначена `noindex`.
+
+### Альтернатива: свій PostgREST у Kubernetes
+
+`deploy/k8s-postgrest.yaml`, `deploy/roles.sql`, `deploy/.env.example` — варіант для
+кластера з власним Postgres (роль `authenticator` → `web_anon`). Не використовується в
+продакшні; ingress у маніфесті розрахований на nginx і потребує адаптації під кластер.
+
+### Локальна перевірка наскрізь
+
+```bash
+export LC_ALL=en_US.UTF-8
+initdb -D /tmp/ard/data -U postgres --encoding=UTF8 --locale=en_US.UTF-8
+pg_ctl -D /tmp/ard/data -o "-c unix_socket_directories='' -c listen_addresses=127.0.0.1 -p 5599" start
+psql -h 127.0.0.1 -p 5599 -U postgres -c 'create database poll'
+for f in db/schema.sql db/aggregate.sql db/gates.sql db/fixture.sql; do
+  psql -h 127.0.0.1 -p 5599 -U postgres -d poll -v ON_ERROR_STOP=1 -f "$f"
+done
+psql -h 127.0.0.1 -p 5599 -U postgres -d poll -v pw="'localtest'" -f deploy/roles.sql
+postgrest deploy/postgrest.local.conf     # brew install postgrest; порт 3999, схема diagnostic, роль web_anon
+```
+
+Далі копія `index.html` з `API_URL = "http://127.0.0.1:3999"` і будь-який статичний
+сервер: POST зі сторінки має повернути 201, а `select * from diagnostic.v_org_result`
+— порахувати організацію. Локаль обов'язково UTF-8: у C-локалі `lower()` не опускає
+кирилицю, і назви організацій перестають зводитися.
 
 ---
 
@@ -129,20 +180,3 @@ select level, passed, failed from diagnostic.gates('ромашка');
 * Респондент бачить лише власну оцінку, з явним застереженням, що рівень організації
   рахується інакше.
 * Email не збирається.
-
-## Розробка
-
-Локальний Postgres для перевірки змін в аналітиці:
-
-```bash
-initdb -D /tmp/ard/data -U postgres --encoding=UTF8 --locale=en_US.UTF-8
-pg_ctl -D /tmp/ard/data -o "-k /tmp/ard/s -h '' -p 5599" start
-psql -h /tmp/ard/s -p 5599 -U postgres -c 'create database poll'
-for f in db/schema.sql db/aggregate.sql db/gates.sql db/fixture.sql; do
-  psql -h /tmp/ard/s -p 5599 -U postgres -d poll -v ON_ERROR_STOP=1 -f "$f"
-done
-psql -h /tmp/ard/s -p 5599 -U postgres -d poll -x -c 'select * from diagnostic.v_org_result'
-```
-
-Локаль обов'язково UTF-8: у C-локалі `lower()` не опускає кирилицю, і назви
-організацій перестають зводитися.
