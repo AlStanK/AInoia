@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="uk">
 <title>AI Readiness Diagnostic — AInoia</title>
 <meta charset="utf-8">
 <meta name="theme-color" content="#f6f4ef">
@@ -39,7 +41,7 @@
   --surface:var(--surface-raised); --surface-secondary:var(--surface-sunken); --surface-tertiary:var(--hairline);
   --muted:var(--ink-muted); --faint:var(--ink-faint);
   --default:var(--surface-sunken); --default-foreground:var(--ink);
-  --accent:var(--tan-deep); --accent-text:var(--bronze); --accent-foreground:var(--fg-on-accent);
+  --accent:var(--tan-deep); --accent-text:#7a5c3c; /* 5.6:1 на paper, 5.1:1 на accent-tint */ --accent-foreground:var(--fg-on-accent);
   --accent-soft:var(--accent-tint); --accent-soft-hover:var(--accent-tint-strong);
   --border:var(--hairline); --separator:var(--hairline); --border-secondary:var(--marble-300);
   --field-background:var(--surface-raised); --field-foreground:var(--ink); --field-placeholder:var(--ink-faint);
@@ -73,11 +75,11 @@ h1{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em;
   font-size:clamp(30px,5vw,42px);line-height:1.12;margin:18px 0 12px;color:var(--foreground)}
 h2{font-family:var(--font-sans);font-weight:600;font-size:clamp(20px,3.2vw,24px);
   line-height:1.25;margin:0 0 6px;letter-spacing:-.015em;color:var(--foreground)}
-h3{font-size:16px;font-weight:600;margin:0 0 10px;color:var(--foreground);letter-spacing:-.01em}
+h3,.card-h{font-size:16px;font-weight:600;margin:0 0 10px;color:var(--foreground);letter-spacing:-.01em;line-height:1.4}
 p{margin:0 0 14px;color:var(--foreground)}
 .lead{font-size:17px;color:var(--muted)}
 .muted{color:var(--muted);font-size:14px}
-.tiny{color:var(--faint);font-size:12.5px;line-height:1.55}
+.tiny{color:var(--muted);font-size:12.5px;line-height:1.55}
 a{color:var(--accent-text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent-border)}
 a:hover{text-decoration-color:var(--accent-text)}
 
@@ -161,6 +163,8 @@ input::placeholder{color:var(--field-placeholder)}
 .err{border-color:var(--danger)!important;box-shadow:var(--field-shadow),0 0 0 3px var(--danger-tint)!important}
 .err-msg{color:var(--danger);font-size:13.5px;margin-top:8px}
 
+/* Контекст запрошення (титульна) */
+.invite-ctx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14px;color:var(--muted);margin:-2px 0 18px}
 /* Згода й повідомлення про обробку даних (титульна) */
 .privacy{margin-top:18px;border:1px solid var(--border);border-radius:var(--field-radius);background:var(--surface);padding:0 16px}
 .privacy summary{cursor:pointer;padding:12px 0;font-size:14px;font-weight:500;color:var(--foreground)}
@@ -178,9 +182,9 @@ input::placeholder{color:var(--field-placeholder)}
 .invite{display:flex;gap:10px;margin-top:12px}
 .invite input[readonly]{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
 .invite button{flex:none;height:40px}
-.lead{display:grid;gap:10px;margin-top:14px}
-.lead button{width:100%}
-@media(min-width:560px){.lead{grid-template-columns:1fr 1.4fr auto}.lead button{width:auto}}
+.lead-form{display:grid;gap:10px;margin-top:14px}
+.lead-form button{width:100%}
+@media(min-width:560px){.lead-form{grid-template-columns:1fr 1.4fr auto}.lead-form button{width:auto}}
 
 /* Button: primary = grad-cta + fg-on-accent (DS Button), ghost = hairline */
 .nav{display:flex;gap:10px;margin-top:28px;align-items:center}
@@ -230,7 +234,7 @@ hr{border:0;border-top:1px solid var(--separator);margin:26px 0}
       <span class="step-n" id="stepN"></span>
     </div>
   </div>
-  <div id="app"></div>
+  <main id="app"></main>
 </div>
 
 <script>
@@ -760,21 +764,29 @@ function intro(){
   <h1>AI Readiness Diagnostic</h1>
   <p class="lead">Опитування визначає, де ваша організація перебуває на шляху впровадження
   ШІ — і що конкретно потрібно, щоб перейти на наступну сходинку.</p>
+  <div class="invite-ctx">${S.codeFromLink
+    ? `<span>Запрошення для організації</span><span class="code">${esc(S.code)}</span><span>Ваші відповіді зведуть з відповідями колег.</span>`
+    : S.org ? `<span>Організація:</span><strong>${esc(S.org)}</strong>`
+            : `<span>Ви перший респондент своєї організації — наприкінці отримаєте посилання для колег.</span>`}</div>
   <div class="note">
     <p><strong>У цьому опитуванні «ШІ»</strong> охоплює генеративний ШІ, AI-copilots, машинне
     навчання, AI-автоматизацію, AI-агентів та інші системи, що використовують методи
     штучного інтелекту.</p>
   </div>
   <div class="card">
-    <h3>Що варто знати перед початком</h3>
+    <h2 class="card-h">Що варто знати перед початком</h2>
     <p class="muted">Опитування проходять представники різних функцій — керівництво, бізнес,
     IT, ризики, HR. Цінність дає саме порівняння їхніх відповідей: розбіжність в оцінках
     між функціями сама по собі є діагнозом.</p>
     <p class="muted">Відповідайте про <strong>фактичний стан</strong>, а не про плани чи
     бажаний. «Не знаю» — нормальна відповідь: вона не знижує бал, а виключається з
     розрахунку й впливає на достовірність оцінки.</p>
-    <p class="muted" style="margin-bottom:0">Близько 25–30 хвилин. Відповіді зберігаються у
-    вашому браузері, тож сторінку можна перезавантажити без втрати відповідей.</p>
+    <p class="muted"><strong>Що ви отримаєте.</strong> Одразу після завершення — вашу особисту
+    оцінку за доменами. Коли відповість решта команди — зведену діагностику організації від
+    консультанта AInoia: профіль за доменами, розрив між функціями та умови переходу на
+    наступний рівень.</p>
+    <p class="muted" style="margin-bottom:0">25–35 хвилин залежно від ролі. Можна перервати:
+    відповіді зберігаються у цьому браузері, сторінку можна закрити й повернутись пізніше.</p>
   </div>
   ${privacyHtml()}
   <label class="consent">
@@ -1005,7 +1017,7 @@ function resultHtml(){
       ? `<div class="status ok">Дякуємо. Коли відповість решта команди, консультант надішле зведення на ${esc(S.email)}.</div>`
       : `<p class="muted">Залиште email — і коли відповість решта команди, ви отримаєте профіль
          організації за доменами, розрив між функціями та умови переходу на наступний рівень.</p>
-         <div class="lead">
+         <div class="lead-form">
            <input type="text" id="name" value="${esc(S.name)}" placeholder="Ім'я (необов'язково)" autocomplete="name">
            <input type="text" id="email" class="${S.lead==="bad"?"err":""}" value="${esc(S.email)}"
                   placeholder="Робочий email" autocomplete="email" inputmode="email">
