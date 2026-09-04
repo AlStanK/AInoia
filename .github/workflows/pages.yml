@@ -9,6 +9,8 @@ on:
     paths:
       - index.html
       - assets/**
+      - methodology/v2-facts.json
+      - methodology/build-v2-question-bank.mjs
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -29,6 +31,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Згенерувати публічний банк питань v2
+        run: node methodology/build-v2-question-bank.mjs
 
       - name: Зібрати лише статику
         run: |

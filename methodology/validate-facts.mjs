@@ -52,8 +52,9 @@ export function validate(doc, expectedIds) {
 // Очікувані id — з index.html, щоб файл фактів не розʼїхався з анкетою.
 export function expectedIdsFromIndex(indexPath) {
   const src = readFileSync(indexPath, "utf8");
-  const Q = eval("[" + src.match(/const Q = \[([\s\S]*?)\n\];/)[1] + "]");
-  return Q.filter(q => !q.ev && !q.quant).map(q => q.id);
+  const match = src.match(/const SCORING_IDS = (\[[^\n]+\]);/);
+  if (!match) throw new Error("Не знайдено SCORING_IDS в index.html");
+  return JSON.parse(match[1]);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
