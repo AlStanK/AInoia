@@ -1,11 +1,13 @@
 # AI Readiness Diagnostic
 
-Консалтинговий інструмент AInoia: multi-respondent опитування, яке визначає фактичну
-позицію організації на **AInoia Evolution Path** (рівні 0–6) і те, які саме умови
-переходу не виконані.
+Консалтинговий інструмент AInoia: multi-respondent опитування з 43 scoring/evidence
+питаннями і шістьма контекстними питаннями. Воно показує позицію організації на
+**AInoia Evolution Path** (рівні 0–6) і те, які саме умови переходу не виконані.
 
-Методологія: **AI Maturity Assessment v1.2** —
-`AInoia/board/04 Knowledge/wiki/AI Maturity Assessment v1.2.md`.
+Поточна методологія: **AI Maturity Assessment v2.0** — чеклист фактів для 35
+scoring-питань; п'ять evidence-питань і Q15/Q20/Q30 лишаються окремими контролами.
+Вихідний канон фактів — `methodology/v2-facts.json`. Відповіді v1.2 зберігаються для
+історії, але не зіставляються і не об'єднуються з v2.0 в один результат зрілості.
 
 > Це окремий застосунок. Дипломне дослідження «Індекс ШІ-зрілості організаційної культури»
 > (`Personal/learning/ai-maturity-survey`) живе своїм життям і спільного коду не має:
@@ -17,13 +19,15 @@
 
 | Шлях | Призначення |
 |---|---|
-| `index.html` | Уся анкета: 48 питань, 9 кроків, умовний агентний блок, індивідуальний результат. Самодостатній файл — стилі й логіка вбудовані. |
+| `index.html` | Уся анкета: 43 scoring/evidence + шість контекстних питань, дев'ять кроків, індивідуальний результат. Самодостатній файл — стилі й логіка вбудовані. |
 | `db/schema.sql` | Схема `diagnostic`: таблиці відповідей і контактів, довідники доменів і рівнів, ролі, RLS. |
 | `db/aggregate.sql` | Агрегація §5–§8: групові середні, enterprise aggregate, Alignment, Confidence, evidence-статуси. |
 | `db/gates.sql` | Гейти Evolution Path §9 і підсумкове представлення `v_org_result`. |
 | `db/fixture.sql` | DEV-ONLY: синтетична організація для перевірки аналітики. У продакшн не застосовувати. |
+| `db/migrate-v2.sql` | Ідемпотентна міграція існуючої бази до v2: `version`, `facts`, `facts_flags`, контакт лише за `org_code` і `v_fact_flags`. Накочує власник вручну після бекапу. |
 | `db/neon-grants.sql` | Insert-only права ролі `anonymous` для Neon Data API (після увімкнення Data API). |
 | `db/migrate-2026-09-03-p0.sql` | Міграція для бази, накоченої до появи `org_code`, згоди і `contacts`. Свіжій базі не потрібна. |
+| `dashboard/results-dashboard.html` | Офлайн reader export: розрахунки, склад версій і заявлені непослідовні факти. |
 | `.github/workflows/pages.yml` | Публікація лише статики на GitHub Pages. |
 | `deploy/` | `postgrest.local.conf` для локальної перевірки; k8s-варіант (`k8s-postgrest.yaml`, `roles.sql`) як альтернатива. |
 
@@ -38,12 +42,30 @@
 Це не дублювання: серверний розрахунок є єдиним джерелом істини, клієнтський
 зберігається в колонці `domains` тільки для звірки.
 
+Для v2 браузер передає старий числовий контракт `answers.qN` і додатково:
+
+```json
+{
+  "version": "2.0",
+  "facts": {"q1": {"checked": [2, 3], "none": false, "unknown": false}},
+  "facts_flags": {"q1": [5]}
+}
+```
+
+`facts_flags` містить лише відмічені рівні вище першого розриву в ланцюгу. Вони є
+заявами для верифікації: не впливають на score, рівень, Confidence, evidence-статуси
+чи gates, які й надалі розраховуються лише з `answers`.
+
 ---
 
 ## Розгортання
 
 Продакшн-схема: **сторінка на GitHub Pages, база й API у Neon**. Свій PostgREST не
 потрібен: Neon Data API — це керований PostgREST поверх тієї ж бази.
+
+> Важливо: цей репозиторій не виконує production-міграцію або деплой автоматично.
+> Власник має вручну зробити бекап, накотити `db/migrate-v2.sql`, перевірити регресію
+> v1.2 і лише потім окремо змержити PR та дозволити Pages deploy.
 
 | Шар | Де | Стан |
 |---|---|---|
@@ -67,6 +89,10 @@ psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/gates.sql
 Замінюється лише імʼя бази в шляху (`/neondb?` → `/poll?`), не підрядок у імені користувача. Користувача змінювати не потрібно: Neon автоматично ремапить `neondb_owner` → `poll_owner` для бази `poll`.
 
 `db/fixture.sql` — лише для локальної перевірки аналітики, у продакшн не застосовувати.
+
+Для вже наявної production-бази v2 не замінює попередні файли схеми. Після перевіреного
+бекапу власник вручну запускає `db/migrate-v2.sql`; цей крок не виконується локальним
+frontend/dashboard workflow і не є підтвердженням деплою.
 
 ### 2. API (Neon Data API)
 
@@ -103,7 +129,8 @@ const AUTH_URL = "https://ep-orange-flower-b29e9zvj.neonauth.c-6.eu-central-1.aw
 вивантажити JSON. Зручно для демонстрації клієнту без збору даних. Порожній `AUTH_URL` =
 токен не береться (звичайний PostgREST з анонімною роллю, як у локальній перевірці).
 
-Merge у `main` → workflow публікує сторінку на Pages. Сторінка позначена `noindex`.
+Після ручного merge у `main` workflow публікує сторінку на Pages. Сторінка позначена
+`noindex`; merge/deploy не є частиною локальної валідації.
 
 ### Альтернатива: свій PostgREST у Kubernetes
 
@@ -130,6 +157,27 @@ postgrest deploy/postgrest.local.conf     # brew install postgrest; порт 399
 — порахувати організацію. Локаль обов'язково UTF-8: у C-локалі `lower()` не опускає
 кирилицю, і назви організацій перестають зводитися.
 
+### Точний порядок локальної валідації v2
+
+Виконуйте перевірку послідовно в disposable локальному середовищі, не в Neon:
+
+1. Згенерувати публічний asset: `node methodology/build-v2-question-bank.mjs`.
+2. Запустити facts, generator і helper тести: `node methodology/validate-facts.mjs` та
+   `node --test 'methodology/*.test.mjs'`.
+3. Підняти чисту схему з `db/schema.sql`, `db/aggregate.sql` і `db/gates.sql`.
+4. Застосувати `db/fixture.sql`; перевірити v1.2 і v2 відповіді та `v_fact_flags`.
+5. Окремо відтворити шлях міграції: зберегти JSON `v_org_result` для v1.2, накотити
+   `db/migrate-v2.sql`, повторити запит і звірити ідентичність результату.
+6. На локальному static server перевірити три сценарії: координатор; респондент
+   `?org=ABCD1234&from=Олена`; респондент `?org=ABCD1234` без `from`.
+7. У Network перевірити POST: у респондента немає email/name або POST до `contacts`, а
+   `facts_flags` є лише для розірваного ланцюга фактів.
+8. Відкрити dashboard з поточним старим export і з `?fixture=v2`: другий має показати
+   змішані v1.2/v2.0 та один заявлений факт, перший — працювати без обох масивів.
+
+Ці команди не авторизують production-дії. Невиконані вручну дії: backup і міграція
+production-бази, merge PR та deploy на Pages.
+
 ---
 
 ## Як це працює для консультанта
@@ -137,15 +185,16 @@ postgrest deploy/postgrest.local.conf     # brew install postgrest; порт 399
 ### Запрошення і код організації
 
 Відповіді колег зводяться в одну організацію **за кодом**, а не за назвою. Код —
-8 символів без 0/O/1/I. Він зʼявляється так:
+8 символів без 0/O/1/I. Візит без `?org=` є візитом координатора: сторінка генерує код,
+а після збереження дає координатору посилання для колег з `&from=`. Візит із валідним
+`?org=` є візитом респондента: він не запрошує інших людей і не лишає контактні дані.
 
-* перший респондент отримує згенерований сторінкою код і на екрані результату —
-  посилання-запрошення виду `…/?org=KX7PQ2MN`, яке надсилає колегам;
-* консультант може згенерувати код сам і одразу розіслати посилання команді:
-  тоді всі респонденти потрапляють в одну картину без зайвих кроків.
+* координатор отримує згенерований сторінкою код і посилання-запрошення;
+* консультант може згенерувати код сам і надіслати посилання команді;
+* респонденти не бачать картки запрошення, поля імені чи email.
 
 ```
-https://alstank.github.io/AInoia/?org=KX7PQ2MN
+https://alstank.github.io/AInoia/?org=KX7PQ2MN&from=Олена
 ```
 
 Код із посилання не редагується. Назва організації лишається окремим полем — для
@@ -158,14 +207,15 @@ https://alstank.github.io/AInoia/?org=KX7PQ2MN
 
 ### Контакти
 
-Email збирається лише на екрані результату і лише з ініціативи респондента —
-окремим insert у `diagnostic.contacts`, привʼязаним до `responses.id`, який
-сторінка генерує сама перед POST.
+Email та ім'я може лишити лише координатор на екрані результату. Це окремий insert у
+`diagnostic.contacts`, пов'язаний тільки через `org_code`; `response_id`, роль і функція
+респондента технічно не можуть бути приєднані до контакту. Payload контакту:
+`{org_code,email,name,kind:"coordinator",consent_version}`.
 
 ```sql
-select c.email, c.name, r.org_name, r.org_code, r.c1_role, r.c2_function, c.created_at
-from diagnostic.contacts c join diagnostic.responses r on r.id = c.response_id
-order by c.created_at desc;
+select org_code, email, name, kind, consent_version, created_at
+from diagnostic.contacts
+order by created_at desc;
 ```
 
 Автопідказки наявних організацій свідомо немає: анонімний відвідувач не повинен
@@ -177,6 +227,12 @@ order by c.created_at desc;
 -- Головне представлення
 select * from diagnostic.v_org_result;
 
+-- Експорт raw-складу версій для дашборду: v_org_versions уже застосовує
+-- org_key_merge до effective org. Не групувати responses.org_key напряму.
+-- Якщо є кілька рядків на org, v_org_result навмисно бере лише v2.0 > v1.2.
+select org, version, respondents from diagnostic.v_org_versions
+order by org, version;
+
 -- Профіль за доменами і розрив між функціями
 select * from diagnostic.v_alignment_detail where org = 'ромашка';
 
@@ -187,12 +243,31 @@ select unnest(next_level_blockers) from diagnostic.v_org_result where org = 'р�
 select question, key, picks, knowers from diagnostic.v_evidence
 where org = 'ромашка' and status = 'claimed';
 
+-- Неперервність чеклиста фактів порушена: читати лише як заявлене
+select org, response_id, question, checked, flags, created_at, role_group
+from diagnostic.v_fact_flags
+where org = 'ромашка';
+
+-- Два масиви для офлайн dashboard reader export
+select org_key as org, version, count(*)::int as respondents
+from diagnostic.responses
+group by org_key, version
+order by org_key, version;
+
+select org, response_id, question, checked, flags, created_at, role_group
+from diagnostic.v_fact_flags
+order by org, created_at, question;
+
 -- Повна картина гейтів
 select level, passed, failed from diagnostic.gates('ромашка');
 ```
 
 `v_org_result` показує **два** рівні: `calculated_level` (з балу) і `achieved_level`
 (після гейтів). Розрив між ними — не помилка, а зміст діагностики.
+
+Якщо в одній організації є рядки v1.2 і v2.0, dashboard показує їхні кількості окремо
+і попереджає, що це не один порівнюваний maturity result. Не підсумовуйте й не
+порівнюйте такі версії між собою.
 
 ---
 
@@ -209,4 +284,5 @@ select level, passed, failed from diagnostic.gates('ромашка');
 * Індивідуальний результат рахується у браузері, по нього на сервер не ходять.
 * Респондент бачить лише власну оцінку, з явним застереженням, що рівень організації
   рахується інакше.
-* Email збирається лише за бажанням респондента після збереження відповідей і використовується тільки для надсилання зведення.
+* Email та ім'я збираються лише за бажанням координатора після збереження його відповідей
+  і використовуються тільки для надсилання зведення. Респондент не бачить цих полів.

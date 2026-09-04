@@ -1,5 +1,5 @@
 -- AInoia AI Readiness Diagnostic — схема збору відповідей
--- База: poll · схема: diagnostic · методологія: AI Maturity Assessment v1.2
+-- База: poll · схема: diagnostic · методологія: AI Maturity Assessment v2.0
 --
 -- Застосування:
 --   psql "$DIAGNOSTIC_DATABASE_URL" -f db/schema.sql
@@ -42,6 +42,8 @@ comment on function diagnostic.org_key(text) is
 -- Відповіді. Один рядок = один респондент.
 --
 -- answers   {"q1": 3, "q2": null, ...}   null = «не знаю» / «свій варіант»
+-- facts     {"q1": {"checked": [2,3], "none": false, "unknown": false}, ...}
+-- facts_flags {"q1": [5], ...}             пропуски у ланцюгу фактів v2
 -- evidence  {"q5": {"selected": ["ai_strategy"], "unknown": false}, ...}
 -- free_text {"q7": "текст свого варіанту", ...}
 -- domains   індивідуальні бали, які показала сторінка; зберігаються лише
@@ -50,7 +52,7 @@ comment on function diagnostic.org_key(text) is
 create table if not exists diagnostic.responses (
   id             uuid primary key default gen_random_uuid(),
   created_at     timestamptz not null default now(),
-  version        text        not null default '1.2',
+  version        text        not null default '2.0',
 
   org_name       text        not null check (length(btrim(org_name)) between 2 and 200),
   -- Код організації: з посилання-запрошення консультанта або згенерований
@@ -69,6 +71,8 @@ create table if not exists diagnostic.responses (
   c5_types       jsonb       not null default '[]'::jsonb,
 
   answers        jsonb       not null,
+  facts          jsonb       not null default '{}'::jsonb,
+  facts_flags    jsonb       not null default '{}'::jsonb,
   evidence       jsonb       not null default '{}'::jsonb,
   free_text      jsonb       not null default '{}'::jsonb,
   domains        jsonb       not null default '{}'::jsonb,
@@ -83,6 +87,8 @@ create table if not exists diagnostic.responses (
   consent_version text        not null,
 
   constraint answers_is_object  check (jsonb_typeof(answers)  = 'object'),
+  constraint facts_is_object    check (jsonb_typeof(facts) = 'object'),
+  constraint facts_flags_is_object check (jsonb_typeof(facts_flags) = 'object'),
   constraint evidence_is_object check (jsonb_typeof(evidence) = 'object')
 );
 
@@ -90,22 +96,22 @@ create index if not exists responses_org_key_idx    on diagnostic.responses (org
 create index if not exists responses_created_at_idx on diagnostic.responses (created_at desc);
 
 -- ---------------------------------------------------------------------------
--- Контакти. Респондент лишає email на екрані результату, вже ПІСЛЯ того, як
--- відповіді збережені. Окрема таблиця, бо анонімна роль не має права ні
--- читати, ні оновлювати responses — вона може лише вставити ще один рядок,
--- прив'язаний до response_id, який сторінка сама згенерувала перед POST.
+-- Контакти. Email лишає лише координатор після збереження відповіді. Зв'язок
+-- тільки через org_code: технічно неможливо поєднати контакт з роллю чи
+-- індивідуальною відповіддю.
 -- ---------------------------------------------------------------------------
 create table if not exists diagnostic.contacts (
   id              uuid primary key default gen_random_uuid(),
   created_at      timestamptz not null default now(),
-  response_id     uuid        not null references diagnostic.responses (id) on delete cascade,
   org_code        text        not null check (org_code ~ '^[A-Z0-9]{4,12}$'),
+  kind            text        not null default 'coordinator',
   email           text        not null check (email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' and length(email) <= 254),
   name            text        check (length(name) <= 200),
-  consent_version text        not null
+  consent_version text        not null,
+  constraint contacts_kind_is_coordinator check (kind in ('coordinator'))
 );
 
-create index if not exists contacts_response_id_idx on diagnostic.contacts (response_id);
+create index if not exists contacts_org_code_idx on diagnostic.contacts (org_code);
 
 -- ---------------------------------------------------------------------------
 -- Довідник доменів. Ваги і склад питань — з методології v1.2 §3.
