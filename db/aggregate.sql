@@ -10,7 +10,30 @@ begin;
 -- ---------------------------------------------------------------------------
 -- Базове представлення: ефективний ключ організації з урахуванням ручного злиття
 -- ---------------------------------------------------------------------------
+-- Raw-склад версій зберігаємо окремо: дашборд/консультант бачить змішаний
+-- збір і може попередити про непорівнюваність, не змішуючи його в score.
+create or replace view diagnostic.v_org_versions as
+select coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org,
+       r.version,
+       count(*)::int as respondents
+from diagnostic.responses r
+group by coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key), r.version;
+
+grant select on diagnostic.v_org_versions to diagnostic_reader;
+
+-- Ledger ruling: в аналітику org потрапляє лише її найвища підтримувана
+-- версія. v2.0 переважає v1.2; непідтримувані версії не агрегуються.
 create or replace view diagnostic.v_responses as
+with raw as (
+  select r.*,
+         coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org,
+         case r.version when '1.2' then 1 when '2.0' then 2 end as version_rank
+  from diagnostic.responses r),
+selected as (
+  select org, max(version_rank) as version_rank
+  from raw
+  where version_rank is not null
+  group by org)
 select r.id,
        r.created_at,
        r.version,
@@ -34,8 +57,9 @@ select r.id,
        r.duration_sec,
        r.consent_at,
        r.consent_version,
-       coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org
-from diagnostic.responses r;
+       r.org
+from raw r
+join selected s using (org, version_rank);
 
 -- Флаги фактів v2 — окремий reader-only зріз для консультанта. Вони не
 -- беруть участі в агрегації: усі домени, Confidence, evidence і gates далі
@@ -49,6 +73,7 @@ select coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org,
        r.created_at,
        r.role_group
 from diagnostic.responses r
+join diagnostic.v_responses selected on selected.id = r.id
 cross join lateral jsonb_each(r.facts_flags) as f(question, flags)
 where r.version = '2.0'
   and jsonb_typeof(f.flags) = 'array'

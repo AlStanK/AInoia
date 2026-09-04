@@ -80,6 +80,36 @@ select diagnostic.__seed('ТОВ «Ромашка»', 'risk', -0.5, false,
 select diagnostic.__seed('ТОВ «Ромашка»', 'people', -0.2, false,
   '{exec_owner,usecase_owner}', '{personal,support_functions}', '{}', '{policy}', '{}');
 
+-- Одна org у двох версіях: ledger має агрегувати тільки v2, але зберегти
+-- raw-склад версій для попередження у звіті/дашборді.
+create or replace function diagnostic.__seed_mixed_version(
+  p_version text, p_value numeric)
+returns void language plpgsql as $fn$
+declare
+  base jsonb := '{}'::jsonb;
+  it text;
+  d record;
+begin
+  for d in select items from diagnostic.domains loop
+    foreach it in array d.items loop
+      base := base || jsonb_build_object(it, p_value);
+    end loop;
+  end loop;
+
+  insert into diagnostic.responses
+    (version, org_name, org_code, consent_at, consent_version,
+     role_group, c1_role, c2_function, c3_scope, c4_awareness,
+     c5_types, answers, agentic_shown)
+  values
+    (p_version, 'ТОВ «Змішані версії»', 'MIXED2', now(), 'fixture',
+     'executive', 'Керівник підрозділу', 'executive', 4, 4,
+     '["public_genai"]'::jsonb, base, true);
+end;
+$fn$;
+
+select diagnostic.__seed_mixed_version('1.2', 1);
+select diagnostic.__seed_mixed_version('2.0', 4);
+
 -- v2: неперервний ланцюг, розрив, «нічого з цього» та «не знаю».
 insert into diagnostic.responses
   (version, org_name, org_code, consent_at, consent_version,
@@ -112,6 +142,24 @@ begin
   end if;
 end $$;
 
+do $$
+begin
+  if (select score from diagnostic.v_org_result where org = 'mixed2')
+       is distinct from 4.00::numeric
+     or exists (select 1 from diagnostic.v_responses
+                where org = 'mixed2' and version <> '2.0')
+     or (select count(*) from diagnostic.v_responses
+         where org = 'mixed2' and version = '2.0') <> 1
+     or (select count(*) from diagnostic.v_org_versions
+         where org = 'mixed2' and version in ('1.2', '2.0')) <> 2
+     or exists (select 1 from diagnostic.v_org_versions
+                where org = 'mixed2' and version in ('1.2', '2.0')
+                  and respondents <> 1) then
+    raise exception 'mixed-version fixture must aggregate v2 only and retain both raw version counts';
+  end if;
+end $$;
+
 drop function diagnostic.__seed(text, text, numeric, boolean, text[], text[], text[], text[], text[]);
+drop function diagnostic.__seed_mixed_version(text, numeric);
 
 commit;

@@ -227,6 +227,11 @@ order by created_at desc;
 -- Головне представлення
 select * from diagnostic.v_org_result;
 
+-- Raw-склад версій: якщо є кілька рядків на org, у v_org_result навмисно
+-- агрегується лише найвища підтримувана версія (v2.0 > v1.2).
+select org, version, respondents from diagnostic.v_org_versions
+order by org, version;
+
 -- Профіль за доменами і розрив між функціями
 select * from diagnostic.v_alignment_detail where org = 'ромашка';
 
