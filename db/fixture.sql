@@ -30,10 +30,10 @@ begin
   end loop;
 
   insert into diagnostic.responses
-    (org_name, org_code, consent_at, consent_version,
+    (version, org_name, org_code, consent_at, consent_version,
      role_group, c1_role, c2_function, c3_scope, c4_awareness,
      c5_types, answers, evidence, agentic_shown, score)
-  values (p_org, upper(left(md5(diagnostic.org_key(p_org)), 8)), now(), 'fixture',
+  values ('1.2', p_org, upper(left(md5(diagnostic.org_key(p_org)), 8)), now(), 'fixture',
      p_group, 'Керівник підрозділу', p_group,
      case when p_group = 'executive' then 5 else 3 end,
      case when p_group = 'executive' then 4 else 3 end,
@@ -80,6 +80,86 @@ select diagnostic.__seed('ТОВ «Ромашка»', 'risk', -0.5, false,
 select diagnostic.__seed('ТОВ «Ромашка»', 'people', -0.2, false,
   '{exec_owner,usecase_owner}', '{personal,support_functions}', '{}', '{policy}', '{}');
 
+-- Одна org у двох версіях: ledger має агрегувати тільки v2, але зберегти
+-- raw-склад версій для попередження у звіті/дашборді.
+create or replace function diagnostic.__seed_mixed_version(
+  p_version text, p_value numeric)
+returns void language plpgsql as $fn$
+declare
+  base jsonb := '{}'::jsonb;
+  it text;
+  d record;
+begin
+  for d in select items from diagnostic.domains loop
+    foreach it in array d.items loop
+      base := base || jsonb_build_object(it, p_value);
+    end loop;
+  end loop;
+
+  insert into diagnostic.responses
+    (version, org_name, org_code, consent_at, consent_version,
+     role_group, c1_role, c2_function, c3_scope, c4_awareness,
+     c5_types, answers, agentic_shown)
+  values
+    (p_version, 'ТОВ «Змішані версії»', 'MIXED2', now(), 'fixture',
+     'executive', 'Керівник підрозділу', 'executive', 4, 4,
+     '["public_genai"]'::jsonb, base, true);
+end;
+$fn$;
+
+select diagnostic.__seed_mixed_version('1.2', 1);
+select diagnostic.__seed_mixed_version('2.0', 4);
+
+-- v2: неперервний ланцюг, розрив, «нічого з цього» та «не знаю».
+insert into diagnostic.responses
+  (version, org_name, org_code, consent_at, consent_version,
+   role_group, c1_role, c2_function, c3_scope, c4_awareness, c5_types,
+   answers, facts, facts_flags, agentic_shown)
+values
+  ('2.0', 'ТОВ «Факти»', 'FACTS2', now(), 'fixture',
+   'business', 'Керівник підрозділу', 'business', 3, 3,
+   '["public_genai"]'::jsonb,
+   '{"q1":3,"q2":3,"q3":1,"q4":null}'::jsonb,
+   '{"q1":{"checked":[2,3],"none":false,"unknown":false},
+     "q2":{"checked":[2,3,5],"none":false,"unknown":false},
+     "q3":{"checked":[],"none":true,"unknown":false},
+     "q4":{"checked":[],"none":false,"unknown":true}}'::jsonb,
+   '{"q2":[5]}'::jsonb,
+   false);
+
+do $$
+declare r diagnostic.responses%rowtype;
+begin
+  select * into r from diagnostic.responses
+  where org_code = 'FACTS2' and version = '2.0'
+  order by created_at desc limit 1;
+
+  if r.answers -> 'q1' is distinct from '3'::jsonb
+     or r.answers -> 'q2' is distinct from '3'::jsonb
+     or r.answers -> 'q3' is distinct from '1'::jsonb
+     or r.answers -> 'q4' is distinct from 'null'::jsonb then
+    raise exception 'v2 fixture must store answers q1=3, q2=3, q3=1, q4=json null';
+  end if;
+end $$;
+
+do $$
+begin
+  if (select score from diagnostic.v_org_result where org = 'mixed2')
+       is distinct from 4.00::numeric
+     or exists (select 1 from diagnostic.v_responses
+                where org = 'mixed2' and version <> '2.0')
+     or (select count(*) from diagnostic.v_responses
+         where org = 'mixed2' and version = '2.0') <> 1
+     or (select count(*) from diagnostic.v_org_versions
+         where org = 'mixed2' and version in ('1.2', '2.0')) <> 2
+     or exists (select 1 from diagnostic.v_org_versions
+                where org = 'mixed2' and version in ('1.2', '2.0')
+                  and respondents <> 1) then
+    raise exception 'mixed-version fixture must aggregate v2 only and retain both raw version counts';
+  end if;
+end $$;
+
 drop function diagnostic.__seed(text, text, numeric, boolean, text[], text[], text[], text[], text[]);
+drop function diagnostic.__seed_mixed_version(text, numeric);
 
 commit;
