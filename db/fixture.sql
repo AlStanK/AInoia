@@ -104,11 +104,10 @@ begin
   where org_code = 'FACTS2' and version = '2.0'
   order by created_at desc limit 1;
 
-  if r.id is null
-     or r.answers ->> 'q1' <> '3'
-     or r.answers ->> 'q2' <> '3'
-     or r.answers ->> 'q3' <> '1'
-     or jsonb_typeof(r.answers -> 'q4') <> 'null' then
+  if r.answers -> 'q1' is distinct from '3'::jsonb
+     or r.answers -> 'q2' is distinct from '3'::jsonb
+     or r.answers -> 'q3' is distinct from '1'::jsonb
+     or r.answers -> 'q4' is distinct from 'null'::jsonb then
     raise exception 'v2 fixture must store answers q1=3, q2=3, q3=1, q4=json null';
   end if;
 end $$;

@@ -11,7 +11,29 @@ begin;
 -- Базове представлення: ефективний ключ організації з урахуванням ручного злиття
 -- ---------------------------------------------------------------------------
 create or replace view diagnostic.v_responses as
-select r.*,
+select r.id,
+       r.created_at,
+       r.version,
+       r.org_name,
+       r.org_code,
+       r.org_key,
+       r.org_key_merge,
+       r.role_group,
+       r.c1_role,
+       r.c2_function,
+       r.c3_scope,
+       r.c4_awareness,
+       r.c5_types,
+       r.answers,
+       r.evidence,
+       r.free_text,
+       r.domains,
+       r.score,
+       r.agentic_shown,
+       r.email,
+       r.duration_sec,
+       r.consent_at,
+       r.consent_version,
        coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org
 from diagnostic.responses r;
 
@@ -19,18 +41,20 @@ from diagnostic.responses r;
 -- беруть участі в агрегації: усі домени, Confidence, evidence і gates далі
 -- рахуються виключно з числового контракту answers.
 create or replace view diagnostic.v_fact_flags as
-select r.org,
+select coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org,
        r.id as response_id,
        f.question,
        coalesce(r.facts -> f.question -> 'checked', '[]'::jsonb) as checked,
        f.flags,
        r.created_at,
        r.role_group
-from diagnostic.v_responses r
+from diagnostic.responses r
 cross join lateral jsonb_each(r.facts_flags) as f(question, flags)
 where r.version = '2.0'
   and jsonb_typeof(f.flags) = 'array'
   and jsonb_array_length(f.flags) > 0;
+
+grant select on diagnostic.v_fact_flags to diagnostic_reader;
 
 -- Кандидати на злиття: різні коди, але схожа назва організації.
 -- Так буває, коли колега не отримав посилання-запрошення і сторінка

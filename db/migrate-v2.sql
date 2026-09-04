@@ -3,18 +3,13 @@
 -- числова агрегація не змінюються; нові v2-рядки додають facts/facts_flags.
 --
 --   psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/migrate-v2.sql
---   psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/aggregate.sql
---   psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/gates.sql
+--   psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/aggregate.sql  # створює v_fact_flags
 --   psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/neon-grants.sql   # якщо є Neon Data API
 
 begin;
 
--- r.* у v_responses змінює порядок вихідних колонок після додавання facts.
--- Залежні view відтворюються командами aggregate.sql/gates.sql нижче в
--- інструкції; так само працює P0-міграція.
-drop view if exists diagnostic.v_org_result cascade;
-drop view if exists diagnostic.v_org_duplicates cascade;
-drop view if exists diagnostic.v_responses cascade;
+-- Наявні analytical view лишаються безперервно доступними: вони читають
+-- числові answers, а facts/facts_flags мають окремий reader view в aggregate.sql.
 
 alter table diagnostic.responses
   add column if not exists facts jsonb not null default '{}'::jsonb,
