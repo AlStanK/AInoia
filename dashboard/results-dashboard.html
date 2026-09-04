@@ -1,0 +1,588 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Readiness Diagnostic</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* ===== AInoia Design System tokens (Warm Coffee, dark-first) ===== */
+:root {
+  color-scheme: dark;
+  --void:#1f1a16; --ink-900:#2d2621; --ink-800:#342c26; --ink-700:#3a322c; --ink-600:#433a31; --ink-500:#4a4039; --ink-400:#59493e; --ink-300:#6e5c4b;
+  --fg-1:#ece5d8; --fg-2:#c5bcac; --fg-3:#ad9d88; --fg-4:#7d6f5d; --fg-on-accent:#241a10;
+  --cyan:#c0a080; --cyan-bright:#d6bd9c; --cyan-deep:#a67c52; --blue:#a67c52; --blue-deep:#8d6e4c; --violet:#b3906f; --magenta:#b54a35;
+  --grad-cta:linear-gradient(100deg,var(--cyan-bright) 0%,var(--blue) 100%);
+  --grad-balance:linear-gradient(100deg,#d6bd9c 0%,#a67c52 48%,#735a3a 100%);
+  --grad-hero:radial-gradient(120% 110% at 50% 0%,#3a322c 0%,var(--ink-900) 46%,var(--void) 100%);
+  --success:#94a878; --warning:#c79a4a; --danger:#d97355;
+  --accent-tint:rgba(192,160,128,.10); --accent-tint-strong:rgba(192,160,128,.16); --accent-border:rgba(192,160,128,.40);
+  --success-tint:rgba(148,168,120,.12); --success-border:rgba(148,168,120,.40);
+  --warning-tint:rgba(199,154,74,.12); --warning-border:rgba(199,154,74,.40);
+  --danger-tint:rgba(217,115,85,.12); --danger-border:rgba(217,115,85,.40);
+  --surface-page:var(--ink-900); --surface-raised:var(--ink-800); --surface-card:var(--ink-700); --surface-card-hover:var(--ink-500);
+  --border-subtle:rgba(236,229,216,.07); --border-default:rgba(236,229,216,.12); --border-strong:rgba(236,229,216,.20); --border-glow:rgba(192,160,128,.45);
+  --text-heading:var(--fg-1); --text-body:var(--fg-2); --text-muted:var(--fg-3); --text-accent:var(--cyan);
+  --focus-ring:rgba(192,160,128,.55);
+  --shadow-md:0 6px 18px rgba(24,18,13,.48); --shadow-lg:0 18px 42px rgba(24,18,13,.55);
+  --glow-cyan-sm:0 0 12px rgba(192,160,128,.38);
+  /* chart layer: validated ordinal tan ramp (dark surface #3a322c), light→dark = low→high */
+  --ramp-1:#e9c7a4; --ramp-2:#d6ad82; --ramp-3:#c29563; --ramp-4:#aa7e4d; --ramp-5:#8f6940;
+  --series:var(--cyan); --series-soft:rgba(192,160,128,.22); --deemph:var(--ink-400);
+  --grid:rgba(236,229,216,.09); --axis:rgba(236,229,216,.18);
+  --font-display:"Montserrat","Century Gothic",system-ui,sans-serif;
+  --font-body:"Manrope",system-ui,-apple-system,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",monospace;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:14px; --radius-xl:20px; --radius-pill:999px;
+  --ease-out:cubic-bezier(.22,1,.36,1);
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { color-scheme:light;
+  --void:#eeebe3; --ink-900:#f6f4ef; --ink-800:#fbfaf7; --ink-700:#fbfaf7; --ink-600:#f1eee6; --ink-500:#eeebe3; --ink-400:#d8d1c2; --ink-300:#e5e0d6;
+  --fg-1:#211e18; --fg-2:#6e6557; --fg-3:#8a8072; --fg-4:#a89e90; --fg-on-accent:#241a10;
+  --cyan:#a67c52; --cyan-bright:#c0a080; --cyan-deep:#8d6e4c; --blue:#8d6e4c; --blue-deep:#735a3a;
+  --grad-hero:radial-gradient(120% 110% at 50% 0%,#fbfaf7 0%,#f6f4ef 46%,#eeebe3 100%);
+  --success:#6f8a52; --warning:#a97a2e; --danger:#a23c2e;
+  --success-tint:rgba(111,138,82,.12); --success-border:rgba(111,138,82,.45);
+  --warning-tint:rgba(169,122,46,.12); --warning-border:rgba(169,122,46,.45);
+  --danger-tint:#f4e2dd; --danger-border:rgba(162,60,46,.4);
+  --accent-tint:rgba(166,124,82,.10); --accent-tint-strong:rgba(166,124,82,.18); --accent-border:rgba(166,124,82,.45);
+  --surface-page:var(--ink-900); --surface-raised:var(--ink-800); --surface-card:var(--ink-700); --surface-card-hover:var(--ink-500);
+  --border-subtle:rgba(33,30,24,.06); --border-default:#e5e0d6; --border-strong:rgba(33,30,24,.16); --border-glow:rgba(141,110,76,.5);
+  --text-heading:var(--fg-1); --text-body:var(--fg-2); --text-muted:var(--fg-3); --text-accent:var(--blue-deep);
+  --focus-ring:rgba(141,110,76,.55);
+  --shadow-md:0 4px 14px rgba(33,26,22,.08); --shadow-lg:0 14px 34px rgba(33,26,22,.14); --glow-cyan-sm:0 0 10px rgba(166,124,82,.25);
+  --ramp-1:#c49c71; --ramp-2:#af8252; --ramp-3:#956b3a; --ramp-4:#7b5427; --ramp-5:#604019;
+  --series:var(--cyan); --series-soft:rgba(166,124,82,.20); --deemph:#d8d1c2;
+  --grid:rgba(33,30,24,.08); --axis:rgba(33,30,24,.22); } }
+:root[data-theme="light"] { color-scheme:light;
+  --void:#eeebe3; --ink-900:#f6f4ef; --ink-800:#fbfaf7; --ink-700:#fbfaf7; --ink-600:#f1eee6; --ink-500:#eeebe3; --ink-400:#d8d1c2; --ink-300:#e5e0d6;
+  --fg-1:#211e18; --fg-2:#6e6557; --fg-3:#8a8072; --fg-4:#a89e90; --fg-on-accent:#241a10;
+  --cyan:#a67c52; --cyan-bright:#c0a080; --cyan-deep:#8d6e4c; --blue:#8d6e4c; --blue-deep:#735a3a;
+  --grad-hero:radial-gradient(120% 110% at 50% 0%,#fbfaf7 0%,#f6f4ef 46%,#eeebe3 100%);
+  --success:#6f8a52; --warning:#a97a2e; --danger:#a23c2e;
+  --success-tint:rgba(111,138,82,.12); --success-border:rgba(111,138,82,.45);
+  --warning-tint:rgba(169,122,46,.12); --warning-border:rgba(169,122,46,.45);
+  --danger-tint:#f4e2dd; --danger-border:rgba(162,60,46,.4);
+  --accent-tint:rgba(166,124,82,.10); --accent-tint-strong:rgba(166,124,82,.18); --accent-border:rgba(166,124,82,.45);
+  --surface-page:var(--ink-900); --surface-raised:var(--ink-800); --surface-card:var(--ink-700); --surface-card-hover:var(--ink-500);
+  --border-subtle:rgba(33,30,24,.06); --border-default:#e5e0d6; --border-strong:rgba(33,30,24,.16); --border-glow:rgba(141,110,76,.5);
+  --text-heading:var(--fg-1); --text-body:var(--fg-2); --text-muted:var(--fg-3); --text-accent:var(--blue-deep);
+  --focus-ring:rgba(141,110,76,.55);
+  --shadow-md:0 4px 14px rgba(33,26,22,.08); --shadow-lg:0 14px 34px rgba(33,26,22,.14); --glow-cyan-sm:0 0 10px rgba(166,124,82,.25);
+  --ramp-1:#c49c71; --ramp-2:#af8252; --ramp-3:#956b3a; --ramp-4:#7b5427; --ramp-5:#604019;
+  --series:var(--cyan); --series-soft:rgba(166,124,82,.20); --deemph:#d8d1c2;
+  --grid:rgba(33,30,24,.08); --axis:rgba(33,30,24,.22); }
+
+/* ===== base ===== */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--surface-page);color:var(--text-body);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background-image:var(--grad-hero);background-attachment:fixed}
+a{color:var(--text-accent)}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 24px 64px}
+h1,h2,h3{margin:0;color:var(--text-heading);font-weight:600;text-wrap:balance}
+h1{font-family:var(--font-display);font-weight:300;font-size:30px;letter-spacing:.02em;line-height:1.15}
+h2{font-size:17px}
+.eyebrow{font-family:var(--font-display);font-weight:500;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--text-muted)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--text-muted)}
+.small{font-size:13px}
+
+/* ===== header + filter row ===== */
+.top{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--border-default)}
+.brand{display:flex;flex-direction:column;gap:10px}
+.wordmark{font-family:var(--font-display);font-weight:300;font-size:13px;letter-spacing:.34em;text-transform:uppercase;color:var(--fg-1)}
+.wordmark b{font-weight:400;background:var(--grad-balance);-webkit-background-clip:text;background-clip:text;color:transparent}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);font-family:var(--font-display);font-weight:500}
+select{appearance:none;-webkit-appearance:none;height:40px;min-width:260px;padding:0 40px 0 14px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--ink-600);color:var(--fg-1);font:inherit;font-weight:500;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--fg-3) 50%),linear-gradient(135deg,var(--fg-3) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat}
+select:hover{border-color:var(--border-glow)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;border:1px solid var(--border-default);color:var(--text-body);background:var(--ink-600);white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--fg-3)}
+.chip.success{color:var(--success);border-color:var(--success-border);background:var(--success-tint)}.chip.success .dot{background:var(--success)}
+.chip.warning{color:var(--warning);border-color:var(--warning-border);background:var(--warning-tint)}.chip.warning .dot{background:var(--warning)}
+.chip.danger{color:var(--danger);border-color:var(--danger-border);background:var(--danger-tint)}.chip.danger .dot{background:var(--danger)}
+.chip.accent{color:var(--text-accent);border-color:var(--accent-border);background:var(--accent-tint)}.chip.accent .dot{background:var(--cyan)}
+
+/* ===== layout ===== */
+.section{margin-top:28px}
+.section-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;margin-bottom:12px}
+.section-head p{margin:0;font-size:13px;color:var(--text-muted);max-width:68ch}
+.grid{display:grid;gap:16px}
+.g-kpi{grid-template-columns:repeat(6,1fr)}
+.g-2{grid-template-columns:1.25fr 1fr}
+.g-2e{grid-template-columns:1fr 1fr}
+@media (max-width:1000px){.g-kpi{grid-template-columns:repeat(3,1fr)}.g-2,.g-2e{grid-template-columns:1fr}}
+@media (max-width:560px){.g-kpi{grid-template-columns:repeat(2,1fr)}.wrap{padding:20px 14px 48px}}
+.card{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-md);min-width:0}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-head h2{font-size:15px}
+.card-head .right{font-family:var(--font-mono);font-size:11.5px;color:var(--fg-4)}
+.toggle{display:inline-flex;border:1px solid var(--border-default);border-radius:var(--radius-pill);overflow:hidden}
+.toggle button{background:transparent;border:0;color:var(--text-muted);font:inherit;font-size:12px;font-weight:600;padding:3px 10px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--accent-tint-strong);color:var(--text-accent)}
+
+/* ===== stat tiles ===== */
+.stat .label{font-family:var(--font-display);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);margin-bottom:10px}
+.stat .value{display:flex;align-items:baseline;gap:6px;font-family:var(--font-mono);font-weight:500;font-size:32px;line-height:1;color:var(--fg-1)}
+.stat .value .unit{font-size:14px;color:var(--cyan)}
+.stat .value.word{font-family:var(--font-body);font-weight:700;font-size:24px;padding-top:4px}
+.stat .foot{margin-top:10px;font-size:12.5px;color:var(--text-muted);min-height:1.4em}
+.meter{position:relative;height:6px;border-radius:3px;background:var(--series-soft);margin-top:12px;overflow:hidden}
+.meter i{position:absolute;inset:0 auto 0 0;background:var(--grad-cta);border-radius:3px}
+
+/* ===== ladder (Evolution Path) ===== */
+.ladder{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;padding-top:8px}
+.step{display:flex;flex-direction:column;gap:8px;min-width:0;position:relative}
+.step .bar{border-radius:6px 6px 0 0;background:var(--deemph);opacity:.55;border:1px solid transparent}
+.step[data-state="achieved"] .bar{background:var(--grad-cta);opacity:1;box-shadow:var(--glow-cyan-sm)}
+.step[data-state="gated"] .bar{background:repeating-linear-gradient(135deg,var(--series-soft) 0 5px,transparent 5px 10px);border:1px solid var(--accent-border);opacity:1}
+.step .num{font-family:var(--font-mono);font-size:12px;color:var(--fg-3)}
+.step .title{font-size:12.5px;line-height:1.3;color:var(--fg-1);font-weight:600;min-height:2.6em}
+.step .band{font-family:var(--font-mono);font-size:11px;color:var(--fg-4)}
+.step .gate{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600}
+.step .gate svg{width:13px;height:13px;flex:none}
+.step .gate.ok{color:var(--success)}.step .gate.no{color:var(--warning)}.step .gate.none{color:var(--fg-4);font-weight:500}
+.step .marker{position:absolute;top:-8px;left:50%;transform:translate(-50%,-100%);white-space:nowrap;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:var(--radius-pill)}
+.marker.calc{background:var(--ink-600);border:1px solid var(--accent-border);color:var(--text-accent)}
+.marker.ach{background:var(--grad-cta);color:var(--fg-on-accent)}
+.ladder-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;font-size:12.5px;color:var(--text-muted)}
+.ladder-legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:14px;height:10px;border-radius:2px;display:inline-block}
+.sw.ach{background:var(--grad-cta)}.sw.gated{background:repeating-linear-gradient(135deg,var(--series-soft) 0 3px,transparent 3px 6px);border:1px solid var(--accent-border)}.sw.ahead{background:var(--deemph);opacity:.55}
+@media (max-width:760px){.ladder{grid-template-columns:repeat(7,minmax(96px,1fr));overflow-x:auto}.ladder-wrap{overflow-x:auto}}
+
+/* ===== bars (domains) ===== */
+.bars{display:grid;grid-template-columns:minmax(150px,1.1fr) 3fr;row-gap:10px;column-gap:14px;align-items:center}
+.bars .lbl{font-size:13px;color:var(--fg-1);display:flex;justify-content:space-between;gap:8px;min-width:0}
+.bars .lbl .w{font-family:var(--font-mono);font-size:11px;color:var(--fg-4);flex:none}
+.track{position:relative;height:22px}
+.track .fill{position:absolute;left:0;top:2px;height:18px;border-radius:0 4px 4px 0;background:var(--series)}
+.track .fill.na{background:repeating-linear-gradient(135deg,var(--deemph) 0 4px,transparent 4px 8px);opacity:.7}
+.track .val{position:absolute;top:0;line-height:22px;font-family:var(--font-mono);font-size:12px;color:var(--fg-1);padding-left:8px;white-space:nowrap}
+.track .thr{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--axis)}
+.axis-row{display:grid;grid-template-columns:minmax(150px,1.1fr) 3fr;column-gap:14px;margin-top:6px}
+.axis{position:relative;height:18px;font-family:var(--font-mono);font-size:11px;color:var(--fg-4)}
+.axis span{position:absolute;transform:translateX(-50%)}
+.axis .thr-l{color:var(--fg-3);transform:translateX(-50%)}
+.hint{font-size:12px;color:var(--text-muted);margin-top:10px}
+
+/* ===== heatmap ===== */
+.heat{width:100%;border-collapse:separate;border-spacing:2px;font-size:12.5px}
+.heat th{font-weight:500;color:var(--text-muted);text-align:left;padding:4px 6px;font-size:12px}
+.heat th.col{text-align:center;vertical-align:bottom;line-height:1.2;font-size:11.5px}
+.heat td{height:38px;text-align:center;font-family:var(--font-mono);font-size:12.5px;border-radius:4px;color:var(--fg-on-accent);cursor:default}
+.heat td.na{background:var(--ink-600);color:var(--fg-4);font-family:var(--font-body)}
+.heat td[tabindex]:hover,.heat td[tabindex]:focus-visible{outline:2px solid var(--fg-1);outline-offset:-2px}
+.heat td.ink{color:var(--fg-1)}
+.scale{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:11.5px;color:var(--text-muted);flex-wrap:wrap}
+.scale .cell{width:34px;height:12px;border-radius:2px}
+.scale .lab{font-family:var(--font-mono);font-size:11px}
+
+/* ===== dumbbell (alignment) ===== */
+.dumb{display:grid;grid-template-columns:minmax(150px,1.1fr) 3fr;row-gap:12px;column-gap:14px;align-items:center}
+.dumb .lbl{font-size:13px;color:var(--fg-1)}
+.dumb .lbl small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--fg-4)}
+.rng{position:relative;height:26px}
+.rng .line{position:absolute;top:12px;height:2px;background:var(--series);border-radius:1px}
+.rng .pt{position:absolute;top:8px;width:10px;height:10px;border-radius:50%;background:var(--series);box-shadow:0 0 0 2px var(--surface-card);transform:translateX(-50%)}
+.rng .pt.lo{background:var(--ramp-1)}.rng .pt.hi{background:var(--ramp-5)}
+.rng .pt.mid{width:6px;height:6px;top:10px;background:var(--fg-3)}
+.rng .nm{position:absolute;top:-2px;font-size:10.5px;color:var(--text-muted);white-space:nowrap;transform:translateX(-50%);line-height:1}
+.rng .nm.hi{top:auto;bottom:-3px}
+
+/* ===== evidence ===== */
+.ev-q{margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle)}
+.ev-q:first-child{margin-top:0;padding-top:0;border-top:0}
+.ev-q h3{font-size:13.5px;font-weight:600;color:var(--fg-1);display:flex;justify-content:space-between;gap:12px}
+.ev-q h3 .q{font-family:var(--font-mono);font-weight:500;color:var(--fg-4);font-size:11.5px}
+.ev-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ev{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:var(--radius-pill);font-size:12px;border:1px solid var(--border-default);color:var(--text-muted);background:transparent}
+.ev svg{width:12px;height:12px;flex:none}
+.ev.confirmed{color:var(--success);border-color:var(--success-border);background:var(--success-tint)}
+.ev.claimed{color:var(--warning);border-color:var(--warning-border);background:var(--warning-tint)}
+.ev-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text-muted);margin-bottom:12px}
+
+/* ===== gates ===== */
+.gate-next{padding:14px 16px;border-radius:var(--radius-md);background:var(--accent-tint);border:1px solid var(--accent-border)}
+.gate-next .to{font-family:var(--font-display);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-accent);font-weight:500}
+.gate-next h3{font-size:15px;margin-top:4px}
+.blockers{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.blockers li{display:flex;gap:10px;font-size:13.5px;color:var(--fg-1);line-height:1.4}
+.blockers li::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--warning);margin-top:7px}
+.gate-list{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column}
+.gate-list li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--border-subtle);font-size:13px}
+.gate-list li .n{font-family:var(--font-mono);color:var(--fg-4);font-size:12px}
+.gate-list li .t{color:var(--fg-1)}
+.gate-list li .s{font-family:var(--font-mono);font-size:11.5px}
+.gate-list li .s.ok{color:var(--success)}.gate-list li .s.no{color:var(--warning)}.gate-list li .s.none{color:var(--fg-4)}
+
+/* ===== tables ===== */
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-family:var(--font-display);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;border-bottom:1px solid var(--border-strong);white-space:nowrap;cursor:pointer;user-select:none}
+.tbl th:hover{color:var(--fg-1)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border-subtle);color:var(--fg-1);white-space:nowrap}
+.tbl td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right}
+.tbl th.num{text-align:right}
+.tbl tr.sel td{background:var(--accent-tint)}
+.tbl tr[tabindex]{cursor:pointer}
+.tbl tr[tabindex]:hover td{background:var(--accent-tint)}
+.tbl td .sub{display:block;font-size:11.5px;color:var(--text-muted);white-space:normal}
+
+/* ===== tooltip ===== */
+#tip{position:fixed;z-index:1000;pointer-events:none;background:rgba(31,26,22,.94);border:1px solid var(--border-glow);color:var(--fg-1);border-radius:var(--radius-sm);padding:8px 10px;font-size:12.5px;line-height:1.4;max-width:280px;box-shadow:var(--shadow-lg);opacity:0;transition:opacity .12s}
+#tip.on{opacity:1}
+#tip b{font-family:var(--font-mono);font-weight:500;font-size:14px;display:block}
+.foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--border-default);font-size:12.5px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+.empty{padding:22px;text-align:center;color:var(--text-muted);font-size:13px;border:1px dashed var(--border-default);border-radius:var(--radius-md)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{body{background:#fff}.card{box-shadow:none}.filters{display:none}}
+</style>
+
+</head><body><div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="wordmark">AIn<b>oia</b> · AI Readiness Diagnostic</div>
+      <h1>Результати діагностики</h1>
+      <div class="small muted">Методологія AI Maturity Assessment v1.2 · AInoia Evolution Path, рівні 0–6</div>
+    </div>
+    <div class="filters">
+      <div class="field">
+        <label for="org">Організація</label>
+        <select id="org"></select>
+      </div>
+      <div class="field">
+        <label>Джерело даних</label>
+        <div id="src-chip"></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Портфель організацій</h2>
+      <p>Кожен рядок — одна організація в базі. Натисніть рядок, щоб відкрити її картину нижче.</p>
+    </div>
+    <div class="card tbl-wrap"><table class="tbl" id="portfolio"></table></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div><div class="eyebrow">Evolution Path</div><h2 id="org-title" style="margin-top:6px;font-size:22px"></h2></div>
+      <p>Розрахунковий рівень задає бал; досягнутий — найвищий рівень, для якого пройдено гейти цього і всіх нижчих рівнів.</p>
+    </div>
+    <div class="card ladder-wrap">
+      <div class="ladder" id="ladder"></div>
+      <div class="ladder-legend">
+        <span><i class="sw ach"></i>Досягнуто: гейти пройдено</span>
+        <span><i class="sw gated"></i>Бал дозволяє, гейти не пройдено</span>
+        <span><i class="sw ahead"></i>Попереду</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section grid g-kpi" id="kpis"></section>
+
+  <section class="section grid g-2">
+    <div class="card">
+      <div class="card-head"><h2>Бали доменів</h2><div class="toggle" data-for="domains"><button aria-pressed="true" data-v="chart">Графік</button><button aria-pressed="false" data-v="table">Таблиця</button></div></div>
+      <div id="domains"></div>
+      <div class="hint">Enterprise aggregate: середнє групових середніх, групи рівноважні. Вертикальні лінії — пороги гейтів 2,5 і 3,0. У дужках — вага домену в підсумковому балі.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Групи ролей × домени</h2><span class="right" id="heat-right"></span></div>
+      <div id="heat"></div>
+    </div>
+  </section>
+
+  <section class="section grid g-2e">
+    <div class="card">
+      <div class="card-head"><h2>Розриви сприйняття</h2><span class="right" id="align-right"></span></div>
+      <div id="align"></div>
+      <div class="hint">Alignment Score = 100 − 25 × середній розрив між групами. Враховуються лише групи з двома і більше респондентами.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Умови переходу</h2><span class="right" id="gates-right"></span></div>
+      <div id="gates"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="card">
+      <div class="card-head"><h2>Докази: що існує фактично</h2><span class="right">Q5 · Q10 · Q25 · Q37 · Q43</span></div>
+      <div class="ev-legend">
+        <span class="ev confirmed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8.2l2 2 4-4.4"/></svg>Підтверджено: ≥2 відповіді і ≥50 % обізнаних</span>
+        <span class="ev claimed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none"/></svg>Заявлено: хоча б одна відповідь</span>
+        <span class="ev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/></svg>Відсутнє</span>
+      </div>
+      <div id="evidence"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Респонденти</h2><p>Індивідуальний бал рахує сторінка у браузері й зберігається лише для звірки; аналітика вище рахується сервером з усіх відповідей.</p></div>
+    <div class="card tbl-wrap"><table class="tbl" id="resp"></table></div>
+  </section>
+
+  <footer class="foot">
+    <span>Експорт з бази <span class="mono">poll · diagnostic</span> станом на <span class="mono" id="exported"></span></span>
+    <span>AInoia · Balance. Purpose. Performance.</span>
+  </footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const DATA = {"exported_at":"2026-09-03","domains":[{"key":"strategy","ord":1,"items":["q1","q2","q3","q4"],"title":"Strategy & Leadership","weight":0.13,"min_valid":2},{"key":"value","ord":2,"items":["q6","q7","q8","q9"],"title":"Business Value & Use Cases","weight":0.18,"min_valid":2},{"key":"adoption","ord":3,"items":["q11","q12","q13","q14","q15"],"title":"Adoption & Process Transformation","weight":0.13,"min_valid":3},{"key":"data","ord":4,"items":["q16","q17","q18","q19","q20"],"title":"Data Readiness","weight":0.11,"min_valid":3},{"key":"tech","ord":5,"items":["q21","q22","q23","q24"],"title":"Technology & Architecture","weight":0.07,"min_valid":2},{"key":"people","ord":6,"items":["q26","q27","q28","q29","q30","q31","q32"],"title":"People, Culture & Operating Model","weight":0.14,"min_valid":4},{"key":"governance","ord":7,"items":["q33","q34","q35","q36"],"title":"Governance, Risk & Security","weight":0.14,"min_valid":2},{"key":"agentic","ord":8,"items":["q38","q39","q40","q41","q42"],"title":"Agentic Operating Model","weight":0.1,"min_valid":3}],"levels":[{"level":0,"title":"AI-хаос і перевантаження","band_low":1.0,"band_high":1.49},{"level":1,"title":"Безпечний перший досвід","band_low":1.5,"band_high":1.99},{"level":2,"title":"AI-узгодження","band_low":2.0,"band_high":2.49},{"level":3,"title":"AI-грамотність і базове посилення","band_low":2.5,"band_high":3.19},{"level":4,"title":"Керовані агенти","band_low":3.2,"band_high":3.79},{"level":5,"title":"Гібридна організація","band_low":3.8,"band_high":4.39},{"level":6,"title":"Самокерована еволюція","band_low":4.4,"band_high":5.0}],"orgs":[{"org":"codislab","score":3.52,"avg_gap":null,"groups_n":1,"org_name":"CodisLab","alignment":null,"index_100":63,"confidence":"Low","respondents":1,"unknown_share":0.0,"achieved_level":1,"achieved_title":"Безпечний перший досвід","calculated_level":4,"calculated_title":"Керовані агенти","insufficient_list":null,"next_level_blockers":["немає підтвердженої AI-стратегії або дорожньої карти (Q5)","Executive AI owner не підтверджений іншими функціями (Q5)","немає підтверджених правил використання AI (Q37)"],"insufficient_domains":0,"source":"prod"},{"org":"кодіслаб","score":2.26,"avg_gap":null,"groups_n":1,"org_name":"ТОВ \"Кодіслаб\"","alignment":null,"index_100":32,"confidence":"Low","respondents":1,"unknown_share":0.0,"achieved_level":0,"achieved_title":"AI-хаос і перевантаження","calculated_level":2,"calculated_title":"AI-узгодження","insufficient_list":null,"next_level_blockers":["пілоти не доходять до практичного результату (Q9 < 2)"],"insufficient_domains":0,"source":"prod"},{"org":"5a3e800e","score":2.59,"avg_gap":1.375,"groups_n":5,"org_name":"Ромашка","alignment":66,"index_100":40,"confidence":"Medium","respondents":10,"unknown_share":0.0,"achieved_level":1,"achieved_title":"Безпечний перший досвід","calculated_level":3,"calculated_title":"AI-грамотність і базове посилення","insufficient_list":null,"next_level_blockers":["немає підтвердженої AI-стратегії або дорожньої карти (Q5)"],"insufficient_domains":0,"source":"fixture"}],"domain_org":[{"ord":7,"org":"кодіслаб","score":1.75,"domain":"governance","groups_n":1},{"ord":2,"org":"кодіслаб","score":1.75,"domain":"value","groups_n":1},{"ord":3,"org":"codislab","score":3.8,"domain":"adoption","groups_n":1},{"ord":3,"org":"кодіслаб","score":2.8,"domain":"adoption","groups_n":1},{"ord":1,"org":"кодіслаб","score":2.0,"domain":"strategy","groups_n":1},{"ord":4,"org":"кодіслаб","score":3.0,"domain":"data","groups_n":1},{"ord":5,"org":"кодіслаб","score":1.75,"domain":"tech","groups_n":1},{"ord":8,"org":"кодіслаб","score":3.2,"domain":"agentic","groups_n":1},{"ord":8,"org":"codislab","score":3.4,"domain":"agentic","groups_n":1},{"ord":7,"org":"codislab","score":3.75,"domain":"governance","groups_n":1},{"ord":4,"org":"codislab","score":3.4,"domain":"data","groups_n":1},{"ord":2,"org":"codislab","score":3.25,"domain":"value","groups_n":1},{"ord":5,"org":"codislab","score":3.25,"domain":"tech","groups_n":1},{"ord":6,"org":"кодіслаб","score":2.143,"domain":"people","groups_n":1},{"ord":1,"org":"codislab","score":3.5,"domain":"strategy","groups_n":1},{"ord":6,"org":"codislab","score":3.714,"domain":"people","groups_n":1},{"ord":1,"org":"5a3e800e","score":3.1,"domain":"strategy","groups_n":5},{"ord":4,"org":"5a3e800e","score":2.267,"domain":"data","groups_n":5},{"ord":7,"org":"5a3e800e","score":2.2,"domain":"governance","groups_n":5},{"ord":6,"org":"5a3e800e","score":2.333,"domain":"people","groups_n":5},{"ord":2,"org":"5a3e800e","score":2.5,"domain":"value","groups_n":5},{"ord":3,"org":"5a3e800e","score":3.0,"domain":"adoption","groups_n":5},{"ord":5,"org":"5a3e800e","score":3.0,"domain":"tech","groups_n":5},{"ord":8,"org":"5a3e800e","score":2.5,"domain":"agentic","groups_n":2}],"domain_group":[{"n":1,"ord":8,"org":"кодіслаб","score":3.2,"domain":"agentic","role_group":"executive"},{"n":1,"ord":6,"org":"кодіслаб","score":2.143,"domain":"people","role_group":"executive"},{"n":1,"ord":3,"org":"codislab","score":3.8,"domain":"adoption","role_group":"executive"},{"n":1,"ord":8,"org":"codislab","score":3.4,"domain":"agentic","role_group":"executive"},{"n":1,"ord":4,"org":"кодіслаб","score":3.0,"domain":"data","role_group":"executive"},{"n":1,"ord":6,"org":"codislab","score":3.714,"domain":"people","role_group":"executive"},{"n":1,"ord":7,"org":"кодіслаб","score":1.75,"domain":"governance","role_group":"executive"},{"n":1,"ord":4,"org":"codislab","score":3.4,"domain":"data","role_group":"executive"},{"n":1,"ord":5,"org":"кодіслаб","score":1.75,"domain":"tech","role_group":"executive"},{"n":1,"ord":5,"org":"codislab","score":3.25,"domain":"tech","role_group":"executive"},{"n":1,"ord":7,"org":"codislab","score":3.75,"domain":"governance","role_group":"executive"},{"n":1,"ord":2,"org":"codislab","score":3.25,"domain":"value","role_group":"executive"},{"n":1,"ord":1,"org":"codislab","score":3.5,"domain":"strategy","role_group":"executive"},{"n":1,"ord":2,"org":"кодіслаб","score":1.75,"domain":"value","role_group":"executive"},{"n":1,"ord":3,"org":"кодіслаб","score":2.8,"domain":"adoption","role_group":"executive"},{"n":1,"ord":1,"org":"кодіслаб","score":2.0,"domain":"strategy","role_group":"executive"},{"n":1,"ord":7,"org":"5a3e800e","score":2.0,"domain":"governance","role_group":"people"},{"n":2,"ord":7,"org":"5a3e800e","score":3.0,"domain":"governance","role_group":"executive"},{"n":2,"ord":2,"org":"5a3e800e","score":2.0,"domain":"value","role_group":"it_data"},{"n":3,"ord":4,"org":"5a3e800e","score":2.333,"domain":"data","role_group":"business"},{"n":2,"ord":4,"org":"5a3e800e","score":3.0,"domain":"data","role_group":"executive"},{"n":2,"ord":6,"org":"5a3e800e","score":3.0,"domain":"people","role_group":"executive"},{"n":2,"ord":5,"org":"5a3e800e","score":2.0,"domain":"tech","role_group":"risk"},{"n":0,"ord":8,"org":"5a3e800e","score":null,"domain":"agentic","role_group":"business"},{"n":1,"ord":3,"org":"5a3e800e","score":3.0,"domain":"adoption","role_group":"people"},{"n":3,"ord":1,"org":"5a3e800e","score":3.0,"domain":"strategy","role_group":"business"},{"n":2,"ord":5,"org":"5a3e800e","score":4.0,"domain":"tech","role_group":"executive"},{"n":3,"ord":3,"org":"5a3e800e","score":3.0,"domain":"adoption","role_group":"business"},{"n":3,"ord":6,"org":"5a3e800e","score":2.667,"domain":"people","role_group":"business"},{"n":3,"ord":7,"org":"5a3e800e","score":2.0,"domain":"governance","role_group":"business"},{"n":2,"ord":7,"org":"5a3e800e","score":2.0,"domain":"governance","role_group":"it_data"},{"n":2,"ord":8,"org":"5a3e800e","score":3.0,"domain":"agentic","role_group":"executive"},{"n":2,"ord":4,"org":"5a3e800e","score":2.0,"domain":"data","role_group":"it_data"},{"n":2,"ord":4,"org":"5a3e800e","score":2.0,"domain":"data","role_group":"risk"},{"n":2,"ord":1,"org":"5a3e800e","score":3.0,"domain":"strategy","role_group":"it_data"},{"n":2,"ord":5,"org":"5a3e800e","score":3.0,"domain":"tech","role_group":"it_data"},{"n":2,"ord":3,"org":"5a3e800e","score":4.0,"domain":"adoption","role_group":"executive"},{"n":2,"ord":2,"org":"5a3e800e","score":3.5,"domain":"value","role_group":"executive"},{"n":1,"ord":4,"org":"5a3e800e","score":2.0,"domain":"data","role_group":"people"},{"n":2,"ord":6,"org":"5a3e800e","score":2.0,"domain":"people","role_group":"it_data"},{"n":2,"ord":1,"org":"5a3e800e","score":4.0,"domain":"strategy","role_group":"executive"},{"n":2,"ord":1,"org":"5a3e800e","score":2.5,"domain":"strategy","role_group":"risk"},{"n":3,"ord":2,"org":"5a3e800e","score":3.0,"domain":"value","role_group":"business"},{"n":1,"ord":1,"org":"5a3e800e","score":3.0,"domain":"strategy","role_group":"people"},{"n":0,"ord":8,"org":"5a3e800e","score":null,"domain":"agentic","role_group":"risk"},{"n":2,"ord":3,"org":"5a3e800e","score":2.0,"domain":"adoption","role_group":"risk"},{"n":1,"ord":6,"org":"5a3e800e","score":2.0,"domain":"people","role_group":"people"},{"n":2,"ord":6,"org":"5a3e800e","score":2.0,"domain":"people","role_group":"risk"},{"n":2,"ord":2,"org":"5a3e800e","score":2.0,"domain":"value","role_group":"risk"},{"n":2,"ord":8,"org":"5a3e800e","score":2.0,"domain":"agentic","role_group":"it_data"},{"n":2,"ord":3,"org":"5a3e800e","score":3.0,"domain":"adoption","role_group":"it_data"},{"n":1,"ord":5,"org":"5a3e800e","score":3.0,"domain":"tech","role_group":"people"},{"n":1,"ord":2,"org":"5a3e800e","score":2.0,"domain":"value","role_group":"people"},{"n":2,"ord":7,"org":"5a3e800e","score":2.0,"domain":"governance","role_group":"risk"},{"n":3,"ord":5,"org":"5a3e800e","score":3.0,"domain":"tech","role_group":"business"},{"n":0,"ord":8,"org":"5a3e800e","score":null,"domain":"agentic","role_group":"people"}],"alignment_detail":[{"gap":1.5,"org":"5a3e800e","risk":2.5,"domain":"strategy","people":null,"it_data":3.0,"overall":3.1,"business":3.0,"executive":4.0},{"gap":1.5,"org":"5a3e800e","risk":2.0,"domain":"value","people":null,"it_data":2.0,"overall":2.5,"business":3.0,"executive":3.5},{"gap":2.0,"org":"5a3e800e","risk":2.0,"domain":"adoption","people":null,"it_data":3.0,"overall":3.0,"business":3.0,"executive":4.0},{"gap":1.0,"org":"5a3e800e","risk":2.0,"domain":"data","people":null,"it_data":2.0,"overall":2.267,"business":2.333,"executive":3.0},{"gap":2.0,"org":"5a3e800e","risk":2.0,"domain":"tech","people":null,"it_data":3.0,"overall":3.0,"business":3.0,"executive":4.0},{"gap":1.0,"org":"5a3e800e","risk":2.0,"domain":"people","people":null,"it_data":2.0,"overall":2.333,"business":2.667,"executive":3.0},{"gap":1.0,"org":"5a3e800e","risk":2.0,"domain":"governance","people":null,"it_data":2.0,"overall":2.2,"business":2.0,"executive":3.0},{"gap":1.0,"org":"5a3e800e","risk":null,"domain":"agentic","people":null,"it_data":2.0,"overall":2.5,"business":null,"executive":3.0}],"confidence":[{"org":"codislab","groups_n":1,"confidence":"Low","visibility":5.0,"respondents":1,"unknown_share":0.0,"confidence_rank":1,"insufficient_domains":0},{"org":"кодіслаб","groups_n":1,"confidence":"Low","visibility":3.0,"respondents":1,"unknown_share":0.0,"confidence_rank":1,"insufficient_domains":0},{"org":"5a3e800e","groups_n":5,"confidence":"Medium","visibility":3.3,"respondents":10,"unknown_share":0.0,"confidence_rank":2,"insufficient_domains":0}],"evidence":[{"key":"oversight","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"owner","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"monitoring","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"products","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"usecase_owner","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"usecase_owner","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"personal","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"exec_owner","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"dataprotection","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"rag","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"inventory","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"support_functions","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"pipelines","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"personal","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"risk_assessment","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"rag","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"roadmap","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"ai_strategy","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"gateway","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"roles","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"exec_owner","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q5"},{"key":"escalation","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"audit_trail","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"roles","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"approved_models","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"support_functions","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"incident","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"core_business","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q10"},{"key":"policy","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"owner","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q37"},{"key":"owner_role","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"registry","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q43"},{"key":"approved_models","org":"кодіслаб","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"environments","org":"codislab","picks":1,"status":"claimed","knowers":1,"question":"q25"},{"key":"owner","org":"5a3e800e","picks":2,"status":"claimed","knowers":10,"question":"q37"},{"key":"personal","org":"5a3e800e","picks":10,"status":"confirmed","knowers":10,"question":"q10"},{"key":"pipelines","org":"5a3e800e","picks":1,"status":"claimed","knowers":10,"question":"q25"},{"key":"support_functions","org":"5a3e800e","picks":5,"status":"confirmed","knowers":10,"question":"q10"},{"key":"core_business","org":"5a3e800e","picks":2,"status":"claimed","knowers":10,"question":"q10"},{"key":"policy","org":"5a3e800e","picks":10,"status":"confirmed","knowers":10,"question":"q37"},{"key":"inventory","org":"5a3e800e","picks":4,"status":"claimed","knowers":10,"question":"q37"},{"key":"roadmap","org":"5a3e800e","picks":1,"status":"claimed","knowers":10,"question":"q5"},{"key":"budget","org":"5a3e800e","picks":2,"status":"claimed","knowers":10,"question":"q5"},{"key":"approved_models","org":"5a3e800e","picks":6,"status":"confirmed","knowers":10,"question":"q25"},{"key":"exec_owner","org":"5a3e800e","picks":9,"status":"confirmed","knowers":10,"question":"q5"},{"key":"audit_trail","org":"5a3e800e","picks":1,"status":"claimed","knowers":4,"question":"q43"},{"key":"usecase_owner","org":"5a3e800e","picks":5,"status":"confirmed","knowers":10,"question":"q5"},{"key":"iam","org":"5a3e800e","picks":3,"status":"claimed","knowers":10,"question":"q25"},{"key":"ai_strategy","org":"5a3e800e","picks":3,"status":"claimed","knowers":10,"question":"q5"},{"key":"registry","org":"5a3e800e","picks":3,"status":"confirmed","knowers":4,"question":"q43"}],"gates":[{"org":"кодіслаб","level":0,"failed":[],"passed":true},{"org":"кодіслаб","level":1,"failed":["пілоти не доходять до практичного результату (Q9 < 2)"],"passed":false},{"org":"кодіслаб","level":2,"failed":["немає підтвердженої AI-стратегії або дорожньої карти (Q5)","Executive AI owner не підтверджений іншими функціями (Q5)","немає підтверджених правил використання AI (Q37)","Strategy & Leadership < 2.5"],"passed":false},{"org":"кодіслаб","level":3,"failed":["Adoption < 3.0","організоване навчання пройшли менш ніж 10% релевантних працівників (Q30)","у значущих use cases немає підтверджених власників (Q5)","є домен нижче 2.0"],"passed":false},{"org":"кодіслаб","level":4,"failed":["немає записів дій і результатів агентів (Q40 < 3)","немає підтвердженого реєстру агентів і власників (Q43)","немає підтверджених правил ескалації до людини (Q43)","business value системно не вимірюється (Q5: AI KPI)","бізнес-ефект use cases не вимірюється (Q8 < 3)","немає підтвердженого IAM / access control для AI (Q25)","немає підтвердженого logging / monitoring для AI (Q25)","Governance, Risk & Security < 3.0","є домен нижче 2.5"],"passed":false},{"org":"кодіслаб","level":5,"failed":["Agentic Operating Model < 3.8","ролі агентів не формалізовані (Q39 < 4)","немає підтвердженої внутрішньої ролі AI Transformation Owner (Q43)","end-to-end workflows не перепроєктовуються під AI (Q12 < 4)","немає повторюваного механізму масштабування (Q13 < 4)","People, Culture & Operating Model < 3.5","не всі домени ≥ 3.0","Alignment < 70: функції розходяться в оцінці власного стану"],"passed":false},{"org":"кодіслаб","level":6,"failed":["Agentic Operating Model < 4.3","lifecycle governance не працює enterprise-wide (Q36 < 4)","менше 8 підтверджених governance controls (Q37)","не всі домени ≥ 3.5","Business Value < 4.0","Adoption < 4.0","Alignment < 80","Assessment Confidence не High — даних недостатньо для такого твердження"],"passed":false},{"org":"codislab","level":0,"failed":[],"passed":true},{"org":"codislab","level":1,"failed":[],"passed":true},{"org":"codislab","level":2,"failed":["немає підтвердженої AI-стратегії або дорожньої карти (Q5)","Executive AI owner не підтверджений іншими функціями (Q5)","немає підтверджених правил використання AI (Q37)"],"passed":false},{"org":"codislab","level":3,"failed":["у значущих use cases немає підтверджених власників (Q5)"],"passed":false},{"org":"codislab","level":4,"failed":["немає підтвердженого реєстру агентів і власників (Q43)","немає підтверджених правил ескалації до людини (Q43)","business value системно не вимірюється (Q5: AI KPI)","немає підтвердженого IAM / access control для AI (Q25)","немає підтвердженого logging / monitoring для AI (Q25)"],"passed":false},{"org":"codislab","level":5,"failed":["Agentic Operating Model < 3.8","ролі агентів не формалізовані (Q39 < 4)","немає підтвердженої внутрішньої ролі AI Transformation Owner (Q43)","немає повторюваного механізму масштабування (Q13 < 4)","Alignment < 70: функції розходяться в оцінці власного стану"],"passed":false},{"org":"codislab","level":6,"failed":["власники процесів не проєктують агентні ролі самостійно (Q42 < 4.5)","Agentic Operating Model < 4.3","автономія агентів не змінюється на основі доказів якості (Q41 < 4)","lifecycle governance не працює enterprise-wide (Q36 < 4)","менше 8 підтверджених governance controls (Q37)","не всі домени ≥ 3.5","Business Value < 4.0","Adoption < 4.0","Alignment < 80","Assessment Confidence не High — даних недостатньо для такого твердження"],"passed":false},{"org":"5a3e800e","level":0,"failed":[],"passed":true},{"org":"5a3e800e","level":1,"failed":[],"passed":true},{"org":"5a3e800e","level":2,"failed":["немає підтвердженої AI-стратегії або дорожньої карти (Q5)"],"passed":false},{"org":"5a3e800e","level":3,"failed":[],"passed":true},{"org":"5a3e800e","level":4,"failed":["Agentic Operating Model < 3.0","агенти не виконують визначені задачі під контролем людини (Q38 < 3)","не визначено, де потрібне підтвердження людини (Q41 < 3)","немає записів дій і результатів агентів (Q40 < 3)","немає підтверджених правил ескалації до людини (Q43)","business value системно не вимірюється (Q5: AI KPI)","бізнес-ефект use cases не вимірюється (Q8 < 3)","немає підтвердженого IAM / access control для AI (Q25)","немає підтвердженого logging / monitoring для AI (Q25)","Data Readiness < 3.0","Governance, Risk & Security < 3.0","є домен нижче 2.5"],"passed":false},{"org":"5a3e800e","level":5,"failed":["Agentic Operating Model < 3.8","ролі агентів не формалізовані (Q39 < 4)","внутрішня команда не створює агентні ролі самостійно (Q42 < 4)","немає підтвердженої внутрішньої ролі AI Transformation Owner (Q43)","end-to-end workflows не перепроєктовуються під AI (Q12 < 4)","немає повторюваного механізму масштабування (Q13 < 4)","People, Culture & Operating Model < 3.5","не всі домени ≥ 3.0","Alignment < 70: функції розходяться в оцінці власного стану"],"passed":false},{"org":"5a3e800e","level":6,"failed":["власники процесів не проєктують агентні ролі самостійно (Q42 < 4.5)","Agentic Operating Model < 4.3","автономія агентів не змінюється на основі доказів якості (Q41 < 4)","lifecycle governance не працює enterprise-wide (Q36 < 4)","менше 8 підтверджених governance controls (Q37)","не всі домени ≥ 3.5","Business Value < 4.0","Adoption < 4.0","Alignment < 80","Assessment Confidence не High — даних недостатньо для такого твердження"],"passed":false}],"items":[{"org":"кодіслаб","item":"q21","score":1.0},{"org":"кодіслаб","item":"q20","score":3.0},{"org":"codislab","item":"q41","score":3.0},{"org":"кодіслаб","item":"q32","score":4.0},{"org":"codislab","item":"q40","score":3.0},{"org":"codislab","item":"q33","score":4.0},{"org":"codislab","item":"q17","score":3.0},{"org":"codislab","item":"q35","score":4.0},{"org":"codislab","item":"q14","score":3.0},{"org":"кодіслаб","item":"q8","score":1.0},{"org":"codislab","item":"q9","score":3.0},{"org":"кодіслаб","item":"q16","score":5.0},{"org":"codislab","item":"q39","score":3.0},{"org":"кодіслаб","item":"q35","score":1.0},{"org":"codislab","item":"q8","score":3.0},{"org":"codislab","item":"q12","score":4.0},{"org":"кодіслаб","item":"q27","score":1.0},{"org":"кодіслаб","item":"q31","score":2.0},{"org":"кодіслаб","item":"q42","score":5.0},{"org":"кодіслаб","item":"q30","score":1.0},{"org":"кодіслаб","item":"q18","score":2.0},{"org":"codislab","item":"q42","score":4.0},{"org":"codislab","item":"q6","score":4.0},{"org":"codislab","item":"q7","score":3.0},{"org":"кодіслаб","item":"q3","score":2.0},{"org":"кодіслаб","item":"q2","score":3.0},{"org":"codislab","item":"q32","score":4.0},{"org":"codislab","item":"q28","score":3.0},{"org":"codislab","item":"q18","score":3.0},{"org":"кодіслаб","item":"q17","score":3.0},{"org":"кодіслаб","item":"q38","score":3.0},{"org":"кодіслаб","item":"q11","score":2.0},{"org":"codislab","item":"q22","score":3.0},{"org":"codislab","item":"q27","score":3.0},{"org":"codislab","item":"q34","score":4.0},{"org":"кодіслаб","item":"q7","score":3.0},{"org":"codislab","item":"q36","score":3.0},{"org":"codislab","item":"q31","score":4.0},{"org":"codislab","item":"q13","score":3.0},{"org":"кодіслаб","item":"q1","score":2.0},{"org":"codislab","item":"q3","score":3.0},{"org":"кодіслаб","item":"q39","score":2.0},{"org":"кодіслаб","item":"q4","score":1.0},{"org":"кодіслаб","item":"q6","score":2.0},{"org":"кодіслаб","item":"q19","score":2.0},{"org":"кодіслаб","item":"q36","score":1.0},{"org":"codislab","item":"q38","score":4.0},{"org":"кодіслаб","item":"q9","score":1.0},{"org":"codislab","item":"q26","score":4.0},{"org":"codislab","item":"q1","score":5.0},{"org":"codislab","item":"q23","score":3.0},{"org":"кодіслаб","item":"q28","score":3.0},{"org":"кодіслаб","item":"q33","score":3.0},{"org":"кодіслаб","item":"q14","score":5.0},{"org":"codislab","item":"q30","score":4.0},{"org":"codislab","item":"q11","score":4.0},{"org":"кодіслаб","item":"q12","score":2.0},{"org":"codislab","item":"q24","score":3.0},{"org":"codislab","item":"q15","score":5.0},{"org":"кодіслаб","item":"q26","score":2.0},{"org":"codislab","item":"q2","score":3.0},{"org":"кодіслаб","item":"q40","score":2.0},{"org":"codislab","item":"q20","score":4.0},{"org":"кодіслаб","item":"q23","score":1.0},{"org":"кодіслаб","item":"q15","score":3.0},{"org":"codislab","item":"q19","score":4.0},{"org":"codislab","item":"q4","score":3.0},{"org":"кодіслаб","item":"q24","score":3.0},{"org":"кодіслаб","item":"q34","score":2.0},{"org":"codislab","item":"q16","score":3.0},{"org":"кодіслаб","item":"q13","score":2.0},{"org":"codislab","item":"q21","score":4.0},{"org":"codislab","item":"q29","score":4.0},{"org":"кодіслаб","item":"q41","score":4.0},{"org":"кодіслаб","item":"q29","score":2.0},{"org":"кодіслаб","item":"q22","score":2.0},{"org":"5a3e800e","item":"q4","score":3.1},{"org":"5a3e800e","item":"q8","score":2.5},{"org":"5a3e800e","item":"q18","score":2.267},{"org":"5a3e800e","item":"q29","score":2.333},{"org":"5a3e800e","item":"q39","score":2.5},{"org":"5a3e800e","item":"q28","score":2.333},{"org":"5a3e800e","item":"q21","score":3.0},{"org":"5a3e800e","item":"q17","score":2.267},{"org":"5a3e800e","item":"q7","score":2.5},{"org":"5a3e800e","item":"q9","score":2.5},{"org":"5a3e800e","item":"q34","score":2.2},{"org":"5a3e800e","item":"q24","score":3.0},{"org":"5a3e800e","item":"q1","score":3.1},{"org":"5a3e800e","item":"q31","score":2.333},{"org":"5a3e800e","item":"q14","score":3.0},{"org":"5a3e800e","item":"q41","score":2.5},{"org":"5a3e800e","item":"q16","score":2.267},{"org":"5a3e800e","item":"q20","score":2.267},{"org":"5a3e800e","item":"q36","score":2.2},{"org":"5a3e800e","item":"q38","score":2.5},{"org":"5a3e800e","item":"q13","score":3.0},{"org":"5a3e800e","item":"q22","score":3.0},{"org":"5a3e800e","item":"q6","score":2.5},{"org":"5a3e800e","item":"q23","score":3.0},{"org":"5a3e800e","item":"q33","score":2.2},{"org":"5a3e800e","item":"q15","score":3.0},{"org":"5a3e800e","item":"q19","score":2.267},{"org":"5a3e800e","item":"q11","score":3.0},{"org":"5a3e800e","item":"q42","score":2.5},{"org":"5a3e800e","item":"q35","score":2.2},{"org":"5a3e800e","item":"q27","score":2.333},{"org":"5a3e800e","item":"q30","score":2.333},{"org":"5a3e800e","item":"q3","score":3.1},{"org":"5a3e800e","item":"q2","score":3.1},{"org":"5a3e800e","item":"q32","score":2.333},{"org":"5a3e800e","item":"q26","score":2.333},{"org":"5a3e800e","item":"q12","score":3.0},{"org":"5a3e800e","item":"q40","score":2.5}],"respondents":[{"org":"codislab","score":3.52,"c1_role":"CEO / генеральний директор","version":"1.2","c3_scope":5,"org_name":"CodisLab","created_at":"2026-09-03T17:14:50.479949+00:00","role_group":"executive","c2_function":"Executive Management / Strategy","c4_awareness":5,"duration_sec":2076,"agentic_shown":true},{"org":"кодіслаб","score":2.26,"c1_role":"Board / власник","version":"1.2","c3_scope":3,"org_name":"ТОВ \"Кодіслаб\"","created_at":"2026-09-03T19:50:11.931157+00:00","role_group":"executive","c2_function":"Executive Management / Strategy","c4_awareness":3,"duration_sec":1690,"agentic_shown":true},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":5,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"executive","c2_function":"executive","c4_awareness":4,"duration_sec":null,"agentic_shown":true},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":5,"org_name":"Ромашка","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"executive","c2_function":"executive","c4_awareness":4,"duration_sec":null,"agentic_shown":true},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ \"Ромашка\"","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"business","c2_function":"business","c4_awareness":3,"duration_sec":null,"agentic_shown":false},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ромашка","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"business","c2_function":"business","c4_awareness":3,"duration_sec":null,"agentic_shown":false},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ Ромашка","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"business","c2_function":"business","c4_awareness":3,"duration_sec":null,"agentic_shown":false},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"it_data","c2_function":"it_data","c4_awareness":3,"duration_sec":null,"agentic_shown":true},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"it_data","c2_function":"it_data","c4_awareness":3,"duration_sec":null,"agentic_shown":true},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"risk","c2_function":"risk","c4_awareness":3,"duration_sec":null,"agentic_shown":false},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"risk","c2_function":"risk","c4_awareness":3,"duration_sec":null,"agentic_shown":false},{"org":"5a3e800e","score":null,"c1_role":"Керівник підрозділу","version":"1.2","c3_scope":3,"org_name":"ТОВ «Ромашка»","created_at":"2026-09-03T23:26:30.359743+03:00","role_group":"people","c2_function":"people","c4_awareness":3,"duration_sec":null,"agentic_shown":false}]};
+
+const GROUPS = [["executive","Керівництво"],["business","Бізнес"],["it_data","IT / Data"],["risk","Ризики / ІБ"],["people","HR / People"]];
+const GLAB = Object.fromEntries(GROUPS);
+const DOM_UA = {strategy:"Стратегія та лідерство",value:"Бізнес-цінність і use cases",adoption:"Впровадження і зміна процесів",data:"Готовність даних",tech:"Технології та архітектура",people:"Люди, культура та операційна модель",governance:"Управління, ризики та безпека",agentic:"Агентна операційна модель"};
+const EV = {
+  q5:{t:"Формальне управління AI",items:[["ai_strategy","AI-стратегія або принципи"],["roadmap","AI roadmap"],["exec_owner","Executive AI owner"],["usecase_owner","Власники use cases"],["steering","AI steering / governance forum"],["budget","Виділений бюджет"],["portfolio","Портфель AI-ініціатив"],["kpi","AI KPI / метрики value"]]},
+  q10:{t:"Де AI створює підтверджену користь",items:[["personal","Особиста продуктивність"],["support_functions","Допоміжні функції"],["core_business","Ключові бізнес-функції"],["customer_facing","Процеси до клієнта"],["core_ops","Основні операційні процеси"],["management_decisions","Управлінські рішення"],["products","Власні продукти"],["revenue","Нові джерела доходу"]]},
+  q25:{t:"Технічні можливості",items:[["approved_models","Схвалені моделі та інструменти"],["iam","IAM для AI"],["gateway","API / model gateway"],["pipelines","Інтеграції та конвеєри даних"],["rag","Корпоративний пошук / RAG"],["environments","Середовища dev / test / prod"],["versioning","Версіонування та оцінювання"],["monitoring","Логування, моніторинг, аудит"]]},
+  q37:{t:"Механізми управління AI",items:[["owner","Відповідальний за управління AI"],["policy","Політика AI / правила"],["inventory","Реєстр AI-систем"],["risk_assessment","Оцінка ризиків AI"],["dataprotection","Захист даних і приватність"],["oversight","Людський нагляд"],["vendor","Перевірка постачальників"],["incident","Моніторинг та інциденти"],["compliance","Регуляторна відповідність"]]},
+  q43:{t:"Агентне управління",items:[["registry","Реєстр агентів"],["roles","Ролі й межі повноважень"],["escalation","Ескалація до людини"],["audit_trail","Audit trail"],["metrics","Метрики якості та вартості"],["decommission","Виведення з експлуатації"],["owner_role","AI Transformation Owner"]]},
+};
+const ICO = {confirmed:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8.2l2 2 4-4.4"/></svg>',claimed:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none"/></svg>',absent:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/></svg>'};
+const BINS = [[1,2,"< 2,0"],[2,2.5,"2,0–2,5"],[2.5,3.2,"2,5–3,2"],[3.2,3.8,"3,2–3,8"],[3.8,5.01,"≥ 3,8"]];
+
+const fmt = (v,d=2) => v==null ? "—" : Number(v).toFixed(d).replace(".",",");
+const pct = v => Math.max(0,Math.min(100,(v-1)/4*100));
+const el = (tag,cls,txt) => { const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; };
+const byOrg = (arr,org) => arr.filter(r=>r.org===org);
+const srcChip = s => s==="prod" ? '<span class="chip accent"><i class="dot"></i>Бойова база Neon</span>' : '<span class="chip warning"><i class="dot"></i>Синтетична фікстура</span>';
+const confChip = c => ({High:"success",Medium:"warning",Low:"danger"})[c]||"";
+const confUA = c => ({High:"Висока",Medium:"Середня",Low:"Низька"})[c]||c;
+const binIdx = v => { for(let i=0;i<BINS.length;i++) if(v>=BINS[i][0]&&v<BINS[i][1]) return i; return v>=5?4:0; };
+const rampVar = i => `var(--ramp-${i+1})`;
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById("tip");
+function showTip(target){ const t=target.dataset.tip; if(!t) return; tip.replaceChildren(); const [v,...rest]=t.split("\n"); const b=el("b",null,v); tip.appendChild(b); rest.forEach(r=>tip.appendChild(document.createTextNode(r))); tip.classList.add("on"); }
+function moveTip(x,y){ const w=tip.offsetWidth,h=tip.offsetHeight; let L=x+14,T=y+14; if(L+w>innerWidth-8) L=x-w-14; if(T+h>innerHeight-8) T=y-h-14; tip.style.left=L+"px"; tip.style.top=T+"px"; }
+document.addEventListener("pointermove",e=>{ const t=e.target.closest("[data-tip]"); if(t){ showTip(t); moveTip(e.clientX,e.clientY);} else tip.classList.remove("on"); });
+document.addEventListener("focusin",e=>{ const t=e.target.closest("[data-tip]"); if(t){ showTip(t); const r=t.getBoundingClientRect(); moveTip(r.left+r.width/2,r.top+r.height); } });
+document.addEventListener("focusout",()=>tip.classList.remove("on"));
+
+/* ---------- state ---------- */
+const orgs = DATA.orgs.slice().sort((a,b)=>(a.source===b.source?0:a.source==="prod"?-1:1)||b.score-a.score);
+let cur = null;
+const sel = document.getElementById("org");
+orgs.forEach(o=>{ const op=el("option",null,`${o.org_name} — ${fmt(o.score)} · ${o.respondents} респ.`); op.value=o.org; sel.appendChild(op); });
+sel.addEventListener("change",()=>select(sel.value));
+
+function select(org){ cur=orgs.find(o=>o.org===org); sel.value=org; renderPortfolio(); renderOrg(); }
+
+/* ---------- portfolio ---------- */
+let sortKey="score", sortDir=-1;
+function renderPortfolio(){
+  const t=document.getElementById("portfolio"); t.replaceChildren();
+  const cols=[["org_name","Організація"],["respondents","Респонденти","num"],["groups_n","Групи","num"],["score","Бал","num"],["index_100","Індекс","num"],["achieved_level","Досягнутий рівень"],["calculated_level","Розрахунковий"],["confidence","Впевненість"],["alignment","Узгодженість","num"],["source","Джерело"]];
+  const tr=el("tr"); cols.forEach(([k,l,n])=>{ const th=el("th",n||"",l+(sortKey===k?(sortDir<0?" ▼":" ▲"):"")); th.addEventListener("click",()=>{ if(sortKey===k) sortDir*=-1; else {sortKey=k;sortDir=-1;} renderPortfolio(); }); tr.appendChild(th); });
+  t.appendChild(el("thead")).appendChild(tr);
+  const tb=el("tbody");
+  orgs.slice().sort((a,b)=>{ const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x<y?-1:x>y?1:0)*sortDir; }).forEach(o=>{
+    const r=el("tr", cur&&o.org===cur.org?"sel":""); r.tabIndex=0;
+    r.addEventListener("click",()=>select(o.org)); r.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();select(o.org);} });
+    const cells=[
+      [o.org_name], [o.respondents,"num"], [`${o.groups_n} / 5`,"num"], [fmt(o.score),"num"], [o.index_100,"num"],
+      [`${o.achieved_level} · ${o.achieved_title}`], [`${o.calculated_level} · ${o.calculated_title}`],
+      [null,"",`<span class="chip ${confChip(o.confidence)}"><i class="dot"></i>${confUA(o.confidence)}</span>`],
+      [o.alignment==null?"—":o.alignment,"num"], [null,"",srcChip(o.source)] ];
+    cells.forEach(([v,c,html])=>{ const td=el("td",c||""); if(html) td.innerHTML=html; else td.textContent=v; r.appendChild(td); });
+    tb.appendChild(r);
+  });
+  t.appendChild(tb);
+}
+
+/* ---------- org view ---------- */
+function renderOrg(){
+  const o=cur;
+  document.getElementById("org-title").textContent=o.org_name;
+  document.getElementById("src-chip").innerHTML=srcChip(o.source);
+  renderLadder(o); renderKPIs(o); renderDomains(o); renderHeat(o); renderAlign(o); renderGates(o); renderEvidence(o); renderResp(o);
+}
+
+function renderLadder(o){
+  const w=document.getElementById("ladder"); w.replaceChildren();
+  const gates=byOrg(DATA.gates,o.org);
+  DATA.levels.forEach((L,i)=>{
+    const s=el("div","step");
+    const state = L.level<=o.achieved_level ? "achieved" : L.level<=o.calculated_level ? "gated" : "ahead";
+    s.dataset.state=state;
+    if(L.level===o.calculated_level && o.calculated_level!==o.achieved_level) s.appendChild(el("span","marker calc","Розрахунковий"));
+    if(L.level===o.achieved_level) s.appendChild(el("span","marker ach", o.calculated_level===o.achieved_level?"Досягнутий = розрахунковий":"Досягнутий"));
+    const bar=el("div","bar"); bar.style.height=(34+i*14)+"px"; s.appendChild(bar);
+    s.appendChild(el("div","num",`Рівень ${L.level}`));
+    s.appendChild(el("div","title",L.title));
+    s.appendChild(el("div","band",`${fmt(L.band_low)}–${fmt(L.band_high)}`));
+    const g=gates.find(x=>x.level===L.level);
+    const gd=el("div","gate");
+    if(L.level===0){ gd.classList.add("none"); gd.textContent="без гейтів"; }
+    else if(g&&g.passed){ gd.classList.add("ok"); gd.innerHTML=ICO.confirmed+"гейти пройдено"; }
+    else { gd.classList.add("no"); const n=g?g.failed.length:0; gd.innerHTML=ICO.claimed+`${n} ${n===1?"умова":n<5?"умови":"умов"} не виконано`; gd.dataset.tip=(g?g.failed:[]).join("\n"); gd.tabIndex=0; }
+    s.appendChild(gd);
+    w.appendChild(s);
+  });
+}
+
+function stat(label,value,unit,foot,meterPct){
+  const c=el("div","card stat"); c.appendChild(el("div","label",label));
+  const v=el("div","value"); v.appendChild(el("span",null,value)); if(unit) v.appendChild(el("span","unit",unit)); c.appendChild(v);
+  if(meterPct!=null){ const m=el("div","meter"); const i=el("i"); i.style.width=meterPct+"%"; m.appendChild(i); c.appendChild(m); }
+  const f=el("div","foot"); if(typeof foot==="string") f.textContent=foot; else f.appendChild(foot); c.appendChild(f);
+  return c;
+}
+function renderKPIs(o){
+  const w=document.getElementById("kpis"); w.replaceChildren();
+  const conf=byOrg(DATA.confidence,o.org)[0]||{};
+  w.appendChild(stat("Зважений бал",fmt(o.score),"/ 5",`смуга рівня ${o.calculated_level}: ${fmt(DATA.levels[o.calculated_level].band_low)}–${fmt(DATA.levels[o.calculated_level].band_high)}`,pct(o.score)));
+  w.appendChild(stat("Індекс зрілості",String(o.index_100),"/ 100","(бал − 1) / 4 × 100",o.index_100));
+  w.appendChild(stat("Досягнутий рівень",String(o.achieved_level),`з ${o.calculated_level} розрах.`,o.achieved_title));
+  const cc=el("span",`chip ${confChip(o.confidence)}`); cc.innerHTML=`<i class="dot"></i>${confUA(o.confidence)}`;
+  w.appendChild(stat("Впевненість оцінки",confUA(o.confidence),"",`невідомих відповідей ${fmt((conf.unknown_share||0)*100,0)} % · оглядовість ${fmt(conf.visibility,1)} · найслабший чинник обмежує`));
+  w.lastChild.querySelector(".value").classList.add("word"); w.lastChild.querySelector(".value").firstChild.style.color=`var(--${confChip(o.confidence)})`;
+  w.appendChild(stat("Узгодженість",o.alignment==null?"—":String(o.alignment),o.alignment==null?"":"/ 100",o.alignment==null?"потрібно ≥2 респондентів у ≥2 групах":`середній розрив між групами ${fmt(o.avg_gap)}`,o.alignment));
+  w.appendChild(stat("Респонденти",String(o.respondents),`· ${o.groups_n} / 5 груп`,o.insufficient_domains?`недостатньо даних: ${o.insufficient_list.map(d=>DOM_UA[d]).join(", ")}`:"усі 8 доменів оцінені"));
+}
+
+let domView="chart";
+document.querySelector('.toggle[data-for="domains"]').addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; domView=b.dataset.v; e.currentTarget.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderDomains(cur); });
+function renderDomains(o){
+  const w=document.getElementById("domains"); w.replaceChildren();
+  const rows=DATA.domains.map(d=>({d, r:byOrg(DATA.domain_org,o.org).find(x=>x.domain===d.key)||{}}));
+  if(domView==="table"){
+    const t=el("table","tbl"); t.innerHTML="<thead><tr><th>Домен</th><th class=num>Вага</th><th class=num>Бал</th><th class=num>Груп з оцінкою</th></tr></thead>";
+    const tb=el("tbody"); rows.forEach(({d,r})=>{ const tr=el("tr"); [[DOM_UA[d.key]],[fmt(d.weight,2),"num"],[fmt(r.score),"num"],[r.groups_n??"—","num"]].forEach(([v,c])=>tr.appendChild(el("td",c||"",v))); tb.appendChild(tr); });
+    t.appendChild(tb); w.appendChild(t); return;
+  }
+  const g=el("div","bars");
+  rows.forEach(({d,r})=>{
+    const l=el("div","lbl"); l.appendChild(el("span",null,DOM_UA[d.key])); l.appendChild(el("span","w",`(${fmt(d.weight,2)})`)); g.appendChild(l);
+    const tr=el("div","track");
+    [2.5,3].forEach(v=>{ const t=el("i","thr"); t.style.left=pct(v)+"%"; tr.appendChild(t); });
+    const f=el("div","fill"); const val=el("span","val");
+    if(r.score==null){ f.classList.add("na"); f.style.width="12%"; val.style.left="12%"; val.textContent="недостатньо відповідей"; val.style.color="var(--fg-3)"; }
+    else { f.style.width=pct(r.score)+"%"; val.style.left=pct(r.score)+"%"; val.textContent=fmt(r.score); }
+    tr.dataset.tip=`${fmt(r.score)}\n${DOM_UA[d.key]} · вага ${fmt(d.weight,2)} · груп з оцінкою: ${r.groups_n??0}`; tr.tabIndex=0;
+    tr.appendChild(f); tr.appendChild(val); g.appendChild(tr);
+  });
+  w.appendChild(g);
+  const ax=el("div","axis-row"); ax.appendChild(el("div")); const a=el("div","axis");
+  [1,2,3,4,5].forEach(v=>{ const s=el("span",null,String(v)); s.style.left=pct(v)+"%"; a.appendChild(s); });
+  [2.5].forEach(v=>{ const s=el("span","thr-l",fmt(v,1)); s.style.left=pct(v)+"%"; a.appendChild(s); });
+  ax.appendChild(a); w.appendChild(ax);
+}
+
+function renderHeat(o){
+  const w=document.getElementById("heat"); w.replaceChildren();
+  const dg=byOrg(DATA.domain_group,o.org);
+  const present=GROUPS.filter(([k])=>dg.some(r=>r.role_group===k));
+  document.getElementById("heat-right").textContent=`${present.length} з 5 груп`;
+  const t=el("table","heat"); const th=el("tr"); th.appendChild(el("th","","Домен"));
+  present.forEach(([k,l])=>{ const n=Math.max(...dg.filter(r=>r.role_group===k).map(r=>r.n)); th.appendChild(el("th","col",`${l} (${n})`)); });
+  t.appendChild(el("thead")).appendChild(th);
+  const tb=el("tbody");
+  DATA.domains.forEach(d=>{
+    const tr=el("tr"); tr.appendChild(el("th","",DOM_UA[d.key]));
+    present.forEach(([k,l])=>{
+      const r=dg.find(x=>x.role_group===k&&x.domain===d.key);
+      const td=el("td");
+      if(!r||r.score==null){ td.className="na"; td.textContent="—"; td.dataset.tip=`—\n${l} · ${DOM_UA[d.key]}: замало валідних відповідей`; }
+      else { const i=binIdx(r.score); td.style.background=rampVar(i); if(i>=3) td.classList.add("ink"); td.textContent=fmt(r.score); td.dataset.tip=`${fmt(r.score)}\n${l} · ${DOM_UA[d.key]} · респондентів з оцінкою: ${r.n}`; }
+      td.tabIndex=0; tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb); w.appendChild(t);
+  const sc=el("div","scale"); sc.appendChild(el("span",null,"Бал:"));
+  BINS.forEach((b,i)=>{ const c=el("i","cell"); c.style.background=rampVar(i); sc.appendChild(c); sc.appendChild(el("span","lab",b[2])); });
+  w.appendChild(sc);
+}
+
+function renderAlign(o){
+  const w=document.getElementById("align"); w.replaceChildren();
+  const rows=byOrg(DATA.alignment_detail,o.org).sort((a,b)=>b.gap-a.gap);
+  document.getElementById("align-right").textContent = rows.length?`${rows.length} доменів порівняно`:"";
+  if(!rows.length){ w.appendChild(el("div","empty","Розриви не рахуються: потрібні щонайменше дві групи ролей із двома і більше респондентами кожна.")); return; }
+  const g=el("div","dumb");
+  rows.forEach(r=>{
+    const vals=GROUPS.map(([k,l])=>[k,l,r[k]]).filter(x=>x[2]!=null).sort((a,b)=>a[2]-b[2]);
+    const lo=vals[0], hi=vals[vals.length-1];
+    const l=el("div","lbl"); l.textContent=DOM_UA[r.domain]; const s=el("small",null,`розрив ${fmt(r.gap)}`); l.appendChild(s); g.appendChild(l);
+    const rg=el("div","rng");
+    const line=el("i","line"); line.style.left=pct(lo[2])+"%"; line.style.width=(pct(hi[2])-pct(lo[2]))+"%"; rg.appendChild(line);
+    vals.slice(1,-1).forEach(v=>{ const p=el("i","pt mid"); p.style.left=pct(v[2])+"%"; p.dataset.tip=`${fmt(v[2])}\n${v[1]}`; rg.appendChild(p); });
+    const p1=el("i","pt lo"); p1.style.left=pct(lo[2])+"%"; rg.appendChild(p1);
+    const p2=el("i","pt hi"); p2.style.left=pct(hi[2])+"%"; rg.appendChild(p2);
+    const n1=el("span","nm",`${lo[1]} ${fmt(lo[2],1)}`); n1.style.left=pct(lo[2])+"%"; rg.appendChild(n1);
+    const n2=el("span","nm hi",`${hi[1]} ${fmt(hi[2],1)}`); n2.style.left=pct(hi[2])+"%"; rg.appendChild(n2);
+    rg.dataset.tip=`${fmt(r.gap)}\n${DOM_UA[r.domain]}: ${vals.map(v=>`${v[1]} ${fmt(v[2])}`).join(" · ")}\nEnterprise ${fmt(r.overall)}`; rg.tabIndex=0;
+    g.appendChild(rg);
+  });
+  w.appendChild(g);
+}
+
+function renderGates(o){
+  const w=document.getElementById("gates"); w.replaceChildren();
+  const gates=byOrg(DATA.gates,o.org).sort((a,b)=>a.level-b.level);
+  const next=Math.min(o.achieved_level+1,6);
+  document.getElementById("gates-right").textContent=`${gates.filter(g=>g.passed).length - 1} з 6 гейтів пройдено`;
+  const box=el("div","gate-next");
+  box.appendChild(el("div","to",`Перехід ${o.achieved_level} → ${next}`));
+  box.appendChild(el("h3",null,DATA.levels[next].title));
+  const bl=o.next_level_blockers||[];
+  if(!bl.length && o.achieved_level>=6) box.appendChild(el("p","small muted","Найвищий рівень досягнуто."));
+  else if(!bl.length) box.appendChild(el("p","small muted","Гейти наступного рівня пройдені; обмежує розрахунковий бал."));
+  else { const ul=el("ul","blockers"); bl.forEach(b=>ul.appendChild(el("li",null,b))); box.appendChild(ul); }
+  w.appendChild(box);
+  const ul=el("ul","gate-list");
+  gates.forEach(g=>{
+    if(g.level===0) return;
+    const li=el("li"); li.appendChild(el("span","n",`L${g.level}`)); li.appendChild(el("span","t",DATA.levels[g.level].title));
+    const s=el("span","s"+(g.passed?" ok":g.level>o.calculated_level?" none":" no"));
+    s.textContent=g.passed?"пройдено":`${g.failed.length} не виконано`;
+    if(!g.passed){ s.dataset.tip=g.failed.join("\n"); s.tabIndex=0; }
+    li.appendChild(s); ul.appendChild(li);
+  });
+  w.appendChild(ul);
+}
+
+function renderEvidence(o){
+  const w=document.getElementById("evidence"); w.replaceChildren();
+  const ev=byOrg(DATA.evidence,o.org);
+  Object.entries(EV).forEach(([q,def])=>{
+    const rows=ev.filter(r=>r.question===q);
+    const box=el("div","ev-q"); const h=el("h3"); h.appendChild(el("span",null,def.t));
+    const kn=rows[0]?rows[0].knowers:null; h.appendChild(el("span","q",`${q.toUpperCase()} · обізнаних: ${kn??"—"}`)); box.appendChild(h);
+    const items=el("div","ev-items");
+    def.items.forEach(([k,l])=>{
+      const r=rows.find(x=>x.key===k); const st=r?r.status:"absent";
+      const c=el("span","ev "+st); c.innerHTML=ICO[st]; c.appendChild(document.createTextNode(l));
+      c.dataset.tip=`${st==="confirmed"?"Підтверджено":st==="claimed"?"Заявлено":"Відсутнє"}\n${l}: відмітили ${r?r.picks:0} з ${kn??"—"}`; c.tabIndex=0;
+      items.appendChild(c);
+    });
+    box.appendChild(items); w.appendChild(box);
+  });
+}
+
+function renderResp(o){
+  const t=document.getElementById("resp"); t.replaceChildren();
+  const rows=byOrg(DATA.respondents,o.org).sort((a,b)=>a.created_at<b.created_at?-1:1);
+  t.innerHTML="<thead><tr><th>Дата</th><th>Група ролей</th><th>Функція</th><th class=num>Охоплення</th><th class=num>Обізнаність</th><th class=num>Агентний блок</th><th class=num>Тривалість</th><th class=num>Власний бал</th></tr></thead>";
+  const tb=el("tbody");
+  rows.forEach(r=>{
+    const tr=el("tr");
+    const d=new Date(r.created_at); const ds=d.toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"});
+    [[ds],[GLAB[r.role_group]||r.role_group],[r.c2_function||"—"],[r.c3_scope??"—","num"],[r.c4_awareness??"—","num"],[r.agentic_shown?"так":"ні","num"],[r.duration_sec?Math.round(r.duration_sec/60)+" хв":"—","num"],[fmt(r.score),"num"]]
+      .forEach(([v,c])=>tr.appendChild(el("td",c||"",String(v))));
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+
+document.getElementById("exported").textContent=DATA.exported_at;
+select(orgs[0].org);
+</script>
+</body></html>

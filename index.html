@@ -78,6 +78,7 @@ h2{font-family:var(--font-sans);font-weight:600;font-size:clamp(20px,3.2vw,24px)
 h3,.card-h{font-size:16px;font-weight:600;margin:0 0 10px;color:var(--foreground);letter-spacing:-.01em;line-height:1.4}
 p{margin:0 0 14px;color:var(--foreground)}
 .lead{font-size:17px;color:var(--muted)}
+.hook{font-size:15.5px;line-height:1.6;color:var(--foreground);margin:-4px 0 18px}
 .muted{color:var(--muted);font-size:14px}
 .tiny{color:var(--muted);font-size:12.5px;line-height:1.55}
 a{color:var(--accent-text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent-border)}
@@ -603,7 +604,7 @@ const STEPS = [
 ];
 
 /* --- стан ------------------------------------------------------------------ */
-const S = {org:"", code:"", codeFromLink:false, consentAt:null, id:null,
+const S = {org:"", code:"", codeFromLink:false, invitedBy:"", consentAt:null, id:null,
            c1:"", c1_free:"", c2:"", c2_free:"", c3:null, c4:null, c5:[], c5_free:"",
            ans:{}, ev:{}, free:{}, started:Date.now(), sent:null,
            email:"", name:"", lead:null};
@@ -616,8 +617,18 @@ function genCode(){
   crypto.getRandomValues(b);
   return Array.from(b, x => A[x % A.length]).join("");
 }
+/* Оцінка часу: executive і IT/Data проходять довший шлях (агентний блок, більше доменів). */
+const LONG_ROLES = ["Board / власник","CEO / генеральний директор","C-level / директор функції"];
+function timeEstimate(){
+  if (!S.c1 || !S.c2) return null;
+  const long = LONG_ROLES.includes(S.c1) || ["exec","it","data"].includes(S.c2);
+  return long ? "≈35 хвилин" : "≈25 хвилин";
+}
+
 function inviteLink(){
-  return location.origin + location.pathname + "?org=" + S.code;
+  const from = S.name.trim();
+  return location.origin + location.pathname + "?org=" + S.code
+       + (from ? "&from=" + encodeURIComponent(from.slice(0, 60)) : "");
 }
 let step = -1;                       // -1 = титульна, STEPS.length = результат
 let renderedStep = null;             // останній намальований крок — прокрутка вгору лише при зміні кроку
@@ -726,6 +737,8 @@ function contextHtml(){
       ${S.c2==="other"?`<div class="free"><input type="text" data-cfree="c2" value="${esc(S.c2_free)}" placeholder="Ваша функція"></div>`:""}
     </div>
     ${showedErrors && !S.c2 ? `<div class="err-msg">Оберіть варіант.</div>`:""}
+    ${timeEstimate() ? `<div class="q-hint" style="margin-top:10px">Для вашої ролі анкета
+      займає ${timeEstimate()}. Можна перервати й повернутись — відповіді зберігаються.</div>`:""}
   </div>
   <div class="q">
     <div class="q-n">C4</div>
@@ -762,41 +775,45 @@ function contextHtml(){
 function intro(){
   return `<div class="brand">AInoia</div>
   <h1>AI Readiness Diagnostic</h1>
-  <p class="lead">Опитування визначає, де ваша організація перебуває на шляху впровадження
-  ШІ — і що конкретно потрібно, щоб перейти на наступну сходинку.</p>
+  <p class="lead">Де ваша організація насправді на шляху до ШІ — і що саме заважає зробити
+  наступний крок.</p>
+  <p class="hook">Керівництво, бізнес, IT, ризики та HR відповідають на ті самі питання
+  окремо. Де їхні оцінки розходяться — там і є справжня картина. Свою оцінку ви побачите
+  одразу, а зведену діагностику організації підготує консультант AInoia.</p>
   <div class="invite-ctx">${S.codeFromLink
-    ? `<span>Запрошення для організації</span><span class="code">${esc(S.code)}</span><span>Ваші відповіді зведуть з відповідями колег.</span>`
+    ? (S.invitedBy
+        ? `<span>Вас запросив(ла)</span><strong>${esc(S.invitedBy)}</strong><span>як одного з респондентів вашої організації. Код</span><span class="code">${esc(S.code)}</span><span>звʼяже ваші відповіді з відповідями колег — ваших відповідей ніхто з них не побачить.</span>`
+        : `<span>Вас запросили як одного з респондентів вашої організації. Код</span><span class="code">${esc(S.code)}</span><span>звʼяже ваші відповіді з відповідями колег — ваших відповідей ніхто з них не побачить.</span>`)
     : S.org ? `<span>Організація:</span><strong>${esc(S.org)}</strong>`
-            : `<span>Ви перший респондент своєї організації — наприкінці отримаєте посилання для колег.</span>`}</div>
-  <div class="note">
-    <p><strong>У цьому опитуванні «ШІ»</strong> охоплює генеративний ШІ, AI-copilots, машинне
-    навчання, AI-автоматизацію, AI-агентів та інші системи, що використовують методи
-    штучного інтелекту.</p>
-  </div>
+            : `<span>Ви починаєте діагностику своєї організації. Наприкінці отримаєте посилання для колег: чим більше функцій відповість, тим точнішою буде картина.</span>`}</div>
   <div class="card">
-    <h2 class="card-h">Що варто знати перед початком</h2>
-    <p class="muted">Опитування проходять представники різних функцій — керівництво, бізнес,
-    IT, ризики, HR. Цінність дає саме порівняння їхніх відповідей: розбіжність в оцінках
-    між функціями сама по собі є діагнозом.</p>
-    <p class="muted">Відповідайте про <strong>фактичний стан</strong>, а не про плани чи
-    бажаний. «Не знаю» — нормальна відповідь: вона не знижує бал, а виключається з
-    розрахунку й впливає на достовірність оцінки.</p>
+    <h2 class="card-h">Перед початком</h2>
+    <p class="muted">Відповідайте про те, <strong>як є зараз</strong>, а не про плани чи
+    бажане. «Не знаю» — нормальна відповідь: вона не знижує бал, а лише позначає, де
+    організації бракує прозорості. Це теж результат.</p>
     <p class="muted"><strong>Що ви отримаєте.</strong> Одразу після завершення — вашу особисту
-    оцінку за доменами. Коли відповість решта команди — зведену діагностику організації від
-    консультанта AInoia: профіль за доменами, розрив між функціями та умови переходу на
-    наступний рівень.</p>
-    <p class="muted" style="margin-bottom:0">25–35 хвилин залежно від ролі. Можна перервати:
-    відповіді зберігаються у цьому браузері, сторінку можна закрити й повернутись пізніше.</p>
+    оцінку за доменами. Коли відповість решта команди — зведену діагностику організації:
+    профіль за доменами, розрив між функціями та умови переходу на наступний рівень.</p>
+    <p class="muted" style="margin-bottom:0">Приблизно 25–35 хвилин, залежно від вашої ролі.
+    Це можна робити частинами: відповіді зберігаються у цьому браузері — закрийте сторінку
+    й поверніться, коли буде зручно.</p>
+  </div>
+  <p class="tiny" style="margin:-6px 0 18px">У цьому опитуванні «ШІ» охоплює генеративний ШІ,
+  AI-copilots, машинне навчання, AI-автоматизацію, AI-агентів та інші системи, що
+  використовують методи штучного інтелекту.</p>
+  <div class="note">
+    <p>Ваші відповіді бачить лише консультант AInoia. Колеги бачать тільки власну оцінку.
+    Дані зберігаються в ЄС. Повний текст — нижче.</p>
   </div>
   ${privacyHtml()}
   <label class="consent">
     <input type="checkbox" id="consent" ${S.consentAt?"checked":""}>
-    <span>Я ознайомився/-лась із повідомленням про обробку даних і погоджуюся на обробку
-    моїх відповідей для підготовки діагностики організації.</span>
+    <span>Погоджуюся на обробку моїх відповідей для підготовки діагностики організації.
+    Повідомлення про обробку даних прочитав(ла).</span>
   </label>
-  <div class="nav"><button class="primary" id="go" ${S.consentAt?"":"disabled"}>Почати</button></div>
+  <div class="nav"><button class="primary" id="go" ${S.consentAt?"":"disabled"}>Почати діагностику</button></div>
   <p class="tiny" style="margin-top:22px">AI Maturity Assessment v${VERSION} · методологія AInoia
-  Evolution Path. Це структурована діагностика, а не валідована наукова модель зрілості.</p>`;
+  Evolution Path.</p>`;
 }
 
 function privacyHtml(){
@@ -965,6 +982,8 @@ function resultHtml(){
     <div class="muted" style="margin-top:6px">із 5.00 · індекс ${idx === null ? "—" : idx}/100</div>
     <div class="lvl">${lv ? esc(lv[3]) : "Недостатньо даних"}</div>
     <div class="muted">${lv ? "Рівень " + lv[2] + " за шкалою AInoia Evolution Path" : ""}</div>
+    <p class="tiny" style="margin:16px 0 0">Це структурована діагностика за методологією
+    AInoia Evolution Path, а не валідована наукова модель зрілості.</p>
   </div>
 
   <div class="note" style="margin-top:18px">
@@ -1009,6 +1028,8 @@ function resultHtml(){
       <input type="text" id="invite" value="${esc(inviteLink())}" readonly>
       <button class="ghost" id="copy">Скопіювати</button>
     </div>
+    <p class="tiny" style="margin:12px 0 0">Якщо вкажете імʼя нижче, воно додасться в
+    посилання — колеги побачать, хто їх запросив.</p>
   </div>
 
   <div class="card" id="leadCard">
@@ -1046,7 +1067,8 @@ function bindResult(){
   };
   const em = $("#email"), nm = $("#name"), btn = $("#lead");
   if (em){ em.oninput = e => { S.email = e.target.value; save(); }; }
-  if (nm){ nm.oninput = e => { S.name = e.target.value; save(); }; }
+  if (nm){ nm.oninput = e => { S.name = e.target.value; save();
+    const inv = $("#invite"); if (inv) inv.value = inviteLink(); }; }
   if (btn){ btn.onclick = sendLead; }
   setStatus(S.sent);
 }
@@ -1166,11 +1188,16 @@ function applyOrgParam(){
   if (CODE_RE.test(v.toUpperCase())){ S.code = v.toUpperCase(); S.codeFromLink = true; }
   else if (!S.org) S.org = v;              // старі посилання з назвою організації
 }
+/* Ім'я того, хто запросив: ?from=Олена Петренко — для довіри на титульній. */
+function applyFromParam(){
+  const v = (qs.get("from") || "").trim().replace(/\s+/g, " ").slice(0, 60);
+  if (v) S.invitedBy = v;
+}
 if (qs.get("reset") !== null){ try { localStorage.removeItem(KEY); } catch(e){}
-  Object.assign(S, {org:"", code:"", codeFromLink:false, consentAt:null, id:null, c1:"", c2:"", c3:null, c4:null, c5:[],
+  Object.assign(S, {org:"", code:"", codeFromLink:false, invitedBy:"", consentAt:null, id:null, c1:"", c2:"", c3:null, c4:null, c5:[],
                     ans:{}, ev:{}, free:{}, sent:null, email:"", name:"", lead:null});
   step = -1; }
-if (S.sent === null) applyOrgParam();      // після надсилання код зафіксовано
+if (S.sent === null){ applyOrgParam(); applyFromParam(); }   // після надсилання код зафіксовано
 if (!S.code) S.code = genCode();
 render();
 </script>
