@@ -110,4 +110,3 @@
 - **Spec coverage:** checklist questions/chain semantics: Tasks 1–2; coordinator/copy/result: Task 2; schema/privacy: Task 3; analyst/dashboard handling: Task 4; documentation and verification: Task 5.
 - **Scope:** no role routing, random ordering, weight/band/gate changes, or production actions are included.
 - **Compatibility:** scoring, aggregates, Confidence and gates remain based on `answers`, so v1.2 rows retain their existing numeric results.
-
