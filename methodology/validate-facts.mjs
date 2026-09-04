@@ -10,7 +10,7 @@ export const BANNED_EN = [
   "operating model", "accountability", "pain point", "pain points",
   "capability", "capabilities", "stakeholder", "stakeholders", "governance",
 ];
-export const BANNED_EVAL = ["системно", "зріло", "ефективно", "належно", "повноцінно", "справжній", "справжня", "реально"];
+export const BANNED_EVAL = ["системно", "зріло", "ефективно", "належно", "повноцінно", "справжній", "справжня", "справжнє", "справжні", "реально"];
 export const MIN_LEN = 45, MAX_LEN = 110, MAX_SPREAD = 1.6;
 
 const stripParens = s => s.replace(/\([^)]*\)/g, "");
@@ -21,6 +21,9 @@ export function validate(doc, expectedIds) {
   const qs = Array.isArray(doc.questions) ? doc.questions : [];
   const seen = new Set(qs.map(q => q.id));
   for (const id of expectedIds) if (!seen.has(id)) errs.push(`${id}: відсутнє у файлі`);
+  const idCounts = new Map();
+  for (const q of qs) idCounts.set(q.id, (idCounts.get(q.id) || 0) + 1);
+  for (const [id, count] of idCounts) if (count > 1) errs.push(`${id}: дубльоване id`);
   for (const q of qs) {
     if (!expectedIds.includes(q.id)) errs.push(`${q.id}: зайве — нема серед драбинних питань v1.2`);
     const f = Array.isArray(q.facts) ? q.facts : [];
@@ -30,10 +33,15 @@ export function validate(doc, expectedIds) {
     const lens = f.map(x => (x.text || "").length);
     f.forEach((x, i) => {
       const t = x.text || "";
+      if (!t) { errs.push(`${q.id} рівень ${x.level}: немає тексту`); return; }
       if (t.length < MIN_LEN || t.length > MAX_LEN) errs.push(`${q.id} рівень ${x.level}: довжина ${t.length}, треба ${MIN_LEN}–${MAX_LEN}`);
+      const full = t.toLowerCase();
       const bare = stripParens(t).toLowerCase();
-      for (const w of BANNED_EN) if (new RegExp(`(^|[^a-z])${w}([^a-z]|$)`).test(bare)) errs.push(`${q.id} рівень ${x.level}: англійський термін «${w}» поза дужками`);
-      for (const w of BANNED_EVAL) if (bare.includes(w)) errs.push(`${q.id} рівень ${x.level}: оцінне слово «${w}»`);
+      for (const w of BANNED_EN) {
+        const pattern = w.replace(/ /g, "[\\s_-]");
+        if (new RegExp(`(^|[^a-z])${pattern}([^a-z]|$)`).test(bare)) errs.push(`${q.id} рівень ${x.level}: англійський термін «${w}» поза дужками`);
+      }
+      for (const w of BANNED_EVAL) if (full.includes(w)) errs.push(`${q.id} рівень ${x.level}: оцінне слово «${w}»`);
       if (/^(не |немає|нема |жодн|відсутн)/i.test(t.trim())) errs.push(`${q.id} рівень ${x.level}: починається із заперечення`);
     });
     if (Math.max(...lens) / Math.min(...lens) > MAX_SPREAD) errs.push(`${q.id}: розкид довжин ${Math.min(...lens)}–${Math.max(...lens)} > ×${MAX_SPREAD}`);

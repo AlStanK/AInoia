@@ -64,3 +64,39 @@ test("факт не має починатись із заперечення", ()
   const bad = [...ok4]; bad[0] = { level: 2, text: "Немає жодного обговорення ШІ на рівні керівництва за останній рік." };
   assert.ok(validate(base(bad), expectedIds).some(e => e.includes("запереч")));
 });
+
+test("заборонений термін ловиться через дефіс (use-case)", () => {
+  const bad = [...ok4]; bad[1] = { level: 3, text: "Для кожного use-case визначено відповідального керівника з боку бізнесу." };
+  assert.ok(validate(base(bad), expectedIds).some(e => e.includes("use case")));
+});
+
+test("оцінне слово в дужках теж ловиться (справжнє/системно)", () => {
+  const bad = [...ok4]; bad[2] = { level: 4, text: "Пріоритети щодо ШІ записані у стратегії (системно переглядаються керівництвом)." };
+  assert.ok(validate(base(bad), expectedIds).some(e => e.includes("системно")));
+});
+
+test("дубльовані id у questions дають помилку", () => {
+  const doc = {
+    version: "2.0",
+    questions: [
+      { id: "q1", facts: ok4 },
+      { id: "q1", facts: ok4 },
+    ],
+  };
+  const errs = validate(doc, ["q1"]);
+  assert.ok(errs.some(e => e.includes("q1") && e.includes("дубльован")));
+});
+
+test("порожній text дає окреме повідомлення про відсутність тексту", () => {
+  const bad = [...ok4]; bad[0] = { level: 2, text: "" };
+  const errs = validate(base(bad), expectedIds);
+  assert.ok(errs.some(e => e.includes("q1 рівень 2") && e.includes("немає тексту")));
+  assert.ok(!errs.some(e => e.includes("довжина 0")));
+});
+
+test("відсутній text (undefined) дає те саме повідомлення", () => {
+  const bad = ok4.map(f => ({ ...f }));
+  delete bad[3].text;
+  const errs = validate(base(bad), expectedIds);
+  assert.ok(errs.some(e => e.includes("q1 рівень 5") && e.includes("немає тексту")));
+});
