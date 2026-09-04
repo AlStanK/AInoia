@@ -35,14 +35,11 @@ test("buildQuestionBank escapes a hostile closing script tag", () => {
   const dir = mkdtempSync(join(tmpdir(), "ainoia-v2-bank-"));
   const input = join(dir, "v2-facts.json");
   const output = join(dir, "question-bank-v2.js");
-  const facts = [2, 3, 4, 5].map(level => ({ level, text: `Факт рівня ${level}` }));
 
   try {
-    writeFileSync(input, JSON.stringify({
-      version: "2.0",
-      rule: "</script><script>window.compromised=true</script>",
-      questions: [{ id: "q1", domain: "strategy", title: "Питання", facts }],
-    }));
+    const source = JSON.parse(readFileSync(sourceFacts, "utf8"));
+    source.rule = "</script><script>window.compromised=true</script>";
+    writeFileSync(input, JSON.stringify(source));
     buildQuestionBank({ input, output });
 
     const script = readFileSync(output, "utf8");
@@ -51,6 +48,26 @@ test("buildQuestionBank escapes a hostile closing script tag", () => {
     vm.runInNewContext(script, context);
     assert.equal(context.window.AINOIA_V2_QUESTION_BANK.rule.includes("</script"), true);
     assert.equal(context.window.compromised, undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("buildQuestionBank rejects non-v2 or incomplete source data", () => {
+  const dir = mkdtempSync(join(tmpdir(), "ainoia-v2-bank-"));
+  const input = join(dir, "v2-facts.json");
+  const output = join(dir, "question-bank-v2.js");
+
+  try {
+    const incomplete = JSON.parse(readFileSync(sourceFacts, "utf8"));
+    incomplete.questions.pop();
+    writeFileSync(input, JSON.stringify(incomplete));
+    assert.throws(() => buildQuestionBank({ input, output }), /відсутнє|35/);
+
+    const wrongVersion = JSON.parse(readFileSync(sourceFacts, "utf8"));
+    wrongVersion.version = "1.2";
+    writeFileSync(input, JSON.stringify(wrongVersion));
+    assert.throws(() => buildQuestionBank({ input, output }), /version/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { expectedIdsFromIndex, validate } from "./validate-facts.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -20,6 +21,8 @@ export function buildQuestionBank({
   output = join(here, "..", "assets", "question-bank-v2.js"),
 } = {}) {
   const doc = JSON.parse(readFileSync(input, "utf8"));
+  const errors = validate(doc, expectedIdsFromIndex(join(here, "..", "index.html")));
+  if (errors.length) throw new Error(`v2-facts.json не пройшов валідацію:\n${errors.join("\n")}`);
   if (!Array.isArray(doc.questions)) throw new Error("questions має бути масивом");
   doc.questions.forEach(validateQuestion);
 
