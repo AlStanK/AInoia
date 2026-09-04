@@ -227,8 +227,9 @@ order by created_at desc;
 -- Головне представлення
 select * from diagnostic.v_org_result;
 
--- Raw-склад версій: якщо є кілька рядків на org, у v_org_result навмисно
--- агрегується лише найвища підтримувана версія (v2.0 > v1.2).
+-- Експорт raw-складу версій для дашборду: v_org_versions уже застосовує
+-- org_key_merge до effective org. Не групувати responses.org_key напряму.
+-- Якщо є кілька рядків на org, v_org_result навмисно бере лише v2.0 > v1.2.
 select org, version, respondents from diagnostic.v_org_versions
 order by org, version;
 
