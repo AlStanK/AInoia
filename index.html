@@ -415,6 +415,7 @@ function inviteLink(){
 let step = -1;                       // -1 = титульна, STEPS.length = результат
 let renderedStep = null;             // останній намальований крок — прокрутка вгору лише при зміні кроку
 let showedErrors = false;
+let URL_ORG_CODE = null;             // valid ?org= in the current URL, never localStorage
 
 const $  = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -427,7 +428,7 @@ function activeSteps(){
   return STEPS.map((s,i) => i);
 }
 
-function isCoordinator(){ return !S.codeFromLink; }
+function isCoordinator(){ return !URL_ORG_CODE; }
 
 /* --- v2 fact helpers --- */
 function deriveFactAnswer(state){
@@ -983,11 +984,19 @@ function restore(){
 /* --- старт ------------------------------------------------------------------ */
 restore();
 const qs = new URLSearchParams(location.search);
-function applyOrgParam(){
+function validOrgCodeParam(){
   const v = (qs.get("org") || "").trim();
-  if (!v) return;
-  if (CODE_RE.test(v.toUpperCase())){ S.code = v.toUpperCase(); S.codeFromLink = true; }
-  else if (!S.org) S.org = v;              // старі посилання з назвою організації
+  return CODE_RE.test(v.toUpperCase()) ? v.toUpperCase() : null;
+}
+function resetForRespondent(code){
+  Object.assign(S, {org:"", code, codeFromLink:true, invitedBy:"", consentAt:null, id:null,
+    c1:"", c1_free:"", c2:"", c2_free:"", c3:null, c4:null, c5:[], c5_free:"",
+    ans:{}, facts:{}, ev:{}, free:{}, started:Date.now(), sent:null, email:"", name:"", lead:null});
+  step = -1;
+}
+function applyLegacyOrgParam(){
+  const v = (qs.get("org") || "").trim();
+  if (v && !S.org) S.org = v;              // старі посилання з назвою організації
 }
 /* Ім'я того, хто запросив: ?from=Олена Петренко — для довіри на титульній. */
 function applyFromParam(){
@@ -998,7 +1007,15 @@ if (qs.get("reset") !== null){ try { localStorage.removeItem(KEY); } catch(e){}
   Object.assign(S, {org:"", code:"", codeFromLink:false, invitedBy:"", consentAt:null, id:null, c1:"", c2:"", c3:null, c4:null, c5:[],
                     ans:{}, facts:{}, ev:{}, free:{}, sent:null, email:"", name:"", lead:null});
   step = -1; }
-if (S.sent === null){ applyOrgParam(); applyFromParam(); }   // після надсилання код зафіксовано
+URL_ORG_CODE = validOrgCodeParam();
+if (URL_ORG_CODE){
+  // A link is authoritative: never let a completed coordinator session become a respondent session.
+  if (S.code !== URL_ORG_CODE || !S.codeFromLink) resetForRespondent(URL_ORG_CODE);
+  else { S.code = URL_ORG_CODE; S.codeFromLink = true; }
+  applyFromParam();
+} else if (S.sent === null){
+  applyLegacyOrgParam(); applyFromParam();
+}
 if (!S.code) S.code = genCode();
 render();
 </script>
