@@ -58,11 +58,13 @@
 
 ```bash
 psql "$DATABASE_URL" -c 'create database poll'
-export POLL_URL="${DATABASE_URL/\/neondb/\/poll}"   # та сама адреса, база poll
+POLL_URL=$(printf "%s" "$DATABASE_URL" | sed "s#/neondb?#/poll?#")   # та сама адреса, база poll
 psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
 psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/aggregate.sql
 psql "$POLL_URL" -v ON_ERROR_STOP=1 -f db/gates.sql
 ```
+
+Замінюється лише імʼя бази в шляху (`/neondb?` → `/poll?`), не підрядок у імені користувача. Користувача змінювати не потрібно: Neon автоматично ремапить `neondb_owner` → `poll_owner` для бази `poll`.
 
 `db/fixture.sql` — лише для локальної перевірки аналітики, у продакшн не застосовувати.
 
