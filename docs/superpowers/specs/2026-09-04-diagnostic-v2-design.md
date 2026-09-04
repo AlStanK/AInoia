@@ -56,7 +56,7 @@
 
 ## 4. База даних
 
-Файл `db/migrate-2026-09-0X-v2.sql`, guard-и як у P0-міграції (idempotent, перевірка наявності колонок):
+Файл `db/migrate-v2.sql (дата накочення — у заголовку файлу)`, guard-и як у P0-міграції (idempotent, перевірка наявності колонок):
 - `responses.facts jsonb not null default '{}'` + check `jsonb_typeof = 'object'`; `responses.facts_flags jsonb not null default '{}'`.
 - `responses.version` default `'2.0'`; v1.2-рядки лишаються з `'1.2'`.
 - `contacts`: `drop column response_id` (і індекс); `add column kind text not null default 'coordinator' check (kind in ('coordinator'))`. `org_code` лишається єдиним звʼязком — join з роллю/функцією стає технічно неможливим.
