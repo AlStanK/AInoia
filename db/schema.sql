@@ -53,7 +53,11 @@ create table if not exists diagnostic.responses (
   version        text        not null default '1.2',
 
   org_name       text        not null check (length(btrim(org_name)) between 2 and 200),
-  org_key        text        generated always as (diagnostic.org_key(org_name)) stored,
+  -- Код організації: з посилання-запрошення консультанта або згенерований
+  -- сторінкою для першого респондента. Саме він зводить відповіді колег
+  -- в одну картину; назва — лише для показу і підказки при злитті.
+  org_code       text        not null check (org_code ~ '^[A-Z0-9]{4,12}$'),
+  org_key        text        generated always as (lower(org_code)) stored,
   org_key_merge  text,                      -- ручне злиття дублів консультантом
 
   role_group     text        not null
@@ -71,8 +75,12 @@ create table if not exists diagnostic.responses (
   score          numeric(4,2),
   agentic_shown  boolean     not null default false,
 
-  email          text,
+  email          text,                      -- не використовується: контакти в diagnostic.contacts
   duration_sec   integer,
+
+  -- Згода на обробку відповідей: момент і версія тексту повідомлення
+  consent_at      timestamptz not null,
+  consent_version text        not null,
 
   constraint answers_is_object  check (jsonb_typeof(answers)  = 'object'),
   constraint evidence_is_object check (jsonb_typeof(evidence) = 'object')
@@ -80,6 +88,24 @@ create table if not exists diagnostic.responses (
 
 create index if not exists responses_org_key_idx    on diagnostic.responses (org_key);
 create index if not exists responses_created_at_idx on diagnostic.responses (created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- Контакти. Респондент лишає email на екрані результату, вже ПІСЛЯ того, як
+-- відповіді збережені. Окрема таблиця, бо анонімна роль не має права ні
+-- читати, ні оновлювати responses — вона може лише вставити ще один рядок,
+-- прив'язаний до response_id, який сторінка сама згенерувала перед POST.
+-- ---------------------------------------------------------------------------
+create table if not exists diagnostic.contacts (
+  id              uuid primary key default gen_random_uuid(),
+  created_at      timestamptz not null default now(),
+  response_id     uuid        not null references diagnostic.responses (id) on delete cascade,
+  org_code        text        not null check (org_code ~ '^[A-Z0-9]{4,12}$'),
+  email           text        not null check (email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' and length(email) <= 254),
+  name            text        check (length(name) <= 200),
+  consent_version text        not null
+);
+
+create index if not exists contacts_response_id_idx on diagnostic.contacts (response_id);
 
 -- ---------------------------------------------------------------------------
 -- Довідник доменів. Ваги і склад питань — з методології v1.2 §3.
@@ -156,10 +182,12 @@ begin
 end $$;
 
 grant usage on schema diagnostic to web_anon, diagnostic_reader;
-grant insert on diagnostic.responses to web_anon;
-grant select on diagnostic.responses, diagnostic.domains, diagnostic.levels to diagnostic_reader;
+grant insert on diagnostic.responses, diagnostic.contacts to web_anon;
+grant select on diagnostic.responses, diagnostic.contacts, diagnostic.domains, diagnostic.levels
+  to diagnostic_reader;
 
 alter table diagnostic.responses enable row level security;
+alter table diagnostic.contacts  enable row level security;
 
 drop policy if exists anon_insert on diagnostic.responses;
 create policy anon_insert on diagnostic.responses
@@ -167,6 +195,14 @@ create policy anon_insert on diagnostic.responses
 
 drop policy if exists reader_select on diagnostic.responses;
 create policy reader_select on diagnostic.responses
+  for select to diagnostic_reader using (true);
+
+drop policy if exists anon_insert on diagnostic.contacts;
+create policy anon_insert on diagnostic.contacts
+  for insert to web_anon with check (true);
+
+drop policy if exists reader_select on diagnostic.contacts;
+create policy reader_select on diagnostic.contacts
   for select to diagnostic_reader using (true);
 
 commit;

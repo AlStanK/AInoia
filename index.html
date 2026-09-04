@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="uk">
 <title>AI Readiness Diagnostic — AInoia</title>
 <meta charset="utf-8">
 <meta name="theme-color" content="#f6f4ef">
@@ -39,7 +41,7 @@
   --surface:var(--surface-raised); --surface-secondary:var(--surface-sunken); --surface-tertiary:var(--hairline);
   --muted:var(--ink-muted); --faint:var(--ink-faint);
   --default:var(--surface-sunken); --default-foreground:var(--ink);
-  --accent:var(--tan-deep); --accent-text:var(--bronze); --accent-foreground:var(--fg-on-accent);
+  --accent:var(--tan-deep); --accent-text:#7a5c3c; /* 5.6:1 на paper, 5.1:1 на accent-tint */ --accent-foreground:var(--fg-on-accent);
   --accent-soft:var(--accent-tint); --accent-soft-hover:var(--accent-tint-strong);
   --border:var(--hairline); --separator:var(--hairline); --border-secondary:var(--marble-300);
   --field-background:var(--surface-raised); --field-foreground:var(--ink); --field-placeholder:var(--ink-faint);
@@ -73,11 +75,12 @@ h1{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em;
   font-size:clamp(30px,5vw,42px);line-height:1.12;margin:18px 0 12px;color:var(--foreground)}
 h2{font-family:var(--font-sans);font-weight:600;font-size:clamp(20px,3.2vw,24px);
   line-height:1.25;margin:0 0 6px;letter-spacing:-.015em;color:var(--foreground)}
-h3{font-size:16px;font-weight:600;margin:0 0 10px;color:var(--foreground);letter-spacing:-.01em}
+h3,.card-h{font-size:16px;font-weight:600;margin:0 0 10px;color:var(--foreground);letter-spacing:-.01em;line-height:1.4}
 p{margin:0 0 14px;color:var(--foreground)}
 .lead{font-size:17px;color:var(--muted)}
+.hook{font-size:15.5px;line-height:1.6;color:var(--foreground);margin:-4px 0 18px}
 .muted{color:var(--muted);font-size:14px}
-.tiny{color:var(--faint);font-size:12.5px;line-height:1.55}
+.tiny{color:var(--muted);font-size:12.5px;line-height:1.55}
 a{color:var(--accent-text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent-border)}
 a:hover{text-decoration-color:var(--accent-text)}
 
@@ -161,6 +164,29 @@ input::placeholder{color:var(--field-placeholder)}
 .err{border-color:var(--danger)!important;box-shadow:var(--field-shadow),0 0 0 3px var(--danger-tint)!important}
 .err-msg{color:var(--danger);font-size:13.5px;margin-top:8px}
 
+/* Контекст запрошення (титульна) */
+.invite-ctx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14px;color:var(--muted);margin:-2px 0 18px}
+/* Згода й повідомлення про обробку даних (титульна) */
+.privacy{margin-top:18px;border:1px solid var(--border);border-radius:var(--field-radius);background:var(--surface);padding:0 16px}
+.privacy summary{cursor:pointer;padding:12px 0;font-size:14px;font-weight:500;color:var(--foreground)}
+.privacy ul{margin:0 0 14px;padding-left:18px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.privacy li+li{margin-top:6px}
+.privacy strong{color:var(--foreground);font-weight:500}
+.privacy a{color:var(--accent-text)}
+.consent{display:flex;gap:12px;align-items:flex-start;margin-top:16px;font-size:14.5px;line-height:1.5;color:var(--foreground);cursor:pointer}
+.consent input[type=checkbox]{flex:none;width:20px;height:20px;margin-top:2px;accent-color:var(--tan-deep)}
+/* Код організації і запрошення */
+.code-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.code-label{font-size:13.5px;color:var(--muted)}
+.code{font-family:var(--font-mono);font-size:14px;letter-spacing:.08em;background:var(--surface-sunken);border:1px solid var(--border);
+  border-radius:6px;padding:3px 9px;color:var(--foreground)}
+.invite{display:flex;gap:10px;margin-top:12px}
+.invite input[readonly]{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.invite button{flex:none;height:40px}
+.lead-form{display:grid;gap:10px;margin-top:14px}
+.lead-form button{width:100%}
+@media(min-width:560px){.lead-form{grid-template-columns:1fr 1.4fr auto}.lead-form button{width:auto}}
+
 /* Button: primary = grad-cta + fg-on-accent (DS Button), ghost = hairline */
 .nav{display:flex;gap:10px;margin-top:28px;align-items:center}
 button{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;
@@ -209,7 +235,7 @@ hr{border:0;border-top:1px solid var(--separator);margin:26px 0}
       <span class="step-n" id="stepN"></span>
     </div>
   </div>
-  <div id="app"></div>
+  <main id="app"></main>
 </div>
 
 <script>
@@ -229,6 +255,13 @@ hr{border:0;border-top:1px solid var(--separator);margin:26px 0}
    =========================================================================== */
 const API_URL = "https://ep-orange-flower-b29e9zvj.apirest.c-6.eu-central-1.aws.neon.tech/poll/rest/v1";
 const AUTH_URL = "https://ep-orange-flower-b29e9zvj.neonauth.c-6.eu-central-1.aws.neon.tech/poll/auth";
+
+/* Повідомлення про обробку даних. CONSENT_VERSION змінювати щоразу, коли
+   змінюється текст privacyHtml(): версія зберігається разом зі згодою. */
+const CONTROLLER      = "CodisLab, LLC";
+const CONTACT_EMAIL   = "ainoia@codislab.com";
+const CONSENT_VERSION = "2026-09-03b";
+const RETENTION_TEXT  = "12 місяців після завершення діагностики організації";
 const VERSION = "1.2";
 
 /* --- контекстні питання ---------------------------------------------------- */
@@ -571,9 +604,34 @@ const STEPS = [
 ];
 
 /* --- стан ------------------------------------------------------------------ */
-const S = {org:"", c1:"", c1_free:"", c2:"", c2_free:"", c3:null, c4:null, c5:[], c5_free:"",
-           ans:{}, ev:{}, free:{}, started:Date.now(), sent:null};
+const S = {org:"", code:"", codeFromLink:false, invitedBy:"", consentAt:null, id:null,
+           c1:"", c1_free:"", c2:"", c2_free:"", c3:null, c4:null, c5:[], c5_free:"",
+           ans:{}, ev:{}, free:{}, started:Date.now(), sent:null,
+           email:"", name:"", lead:null};
+
+/* Код організації: 8 символів без 0/O/1/I. Генерується першому респонденту,
+   колеги отримують його в посиланні-запрошенні (?org=КОД). */
+const CODE_RE = /^[A-Z0-9]{4,12}$/;
+function genCode(){
+  const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", b = new Uint8Array(8);
+  crypto.getRandomValues(b);
+  return Array.from(b, x => A[x % A.length]).join("");
+}
+/* Оцінка часу: executive і IT/Data проходять довший шлях (агентний блок, більше доменів). */
+const LONG_ROLES = ["Board / власник","CEO / генеральний директор","C-level / директор функції"];
+function timeEstimate(){
+  if (!S.c1 || !S.c2) return null;
+  const long = LONG_ROLES.includes(S.c1) || ["exec","it","data"].includes(S.c2);
+  return long ? "≈35 хвилин" : "≈25 хвилин";
+}
+
+function inviteLink(){
+  const from = S.name.trim();
+  return location.origin + location.pathname + "?org=" + S.code
+       + (from ? "&from=" + encodeURIComponent(from.slice(0, 60)) : "");
+}
 let step = -1;                       // -1 = титульна, STEPS.length = результат
+let renderedStep = null;             // останній намальований крок — прокрутка вгору лише при зміні кроку
 let showedErrors = false;
 
 const $  = s => document.querySelector(s);
@@ -649,10 +707,17 @@ function contextHtml(){
   <div class="q">
     <div class="q-n">C1</div>
     <div class="q-t">Назва вашої організації</div>
-    <div class="q-hint">Вкажіть так, як вона звучить у документах. Відповіді колег зводяться в одну картину саме за назвою.</div>
+    <div class="q-hint">Вкажіть так, як вона звучить у документах.</div>
     <input type="text" id="org" class="${bad(S.org.trim().length>=2)}" value="${esc(S.org)}"
            placeholder="Наприклад: ТОВ «Ромашка»" autocomplete="organization">
     ${showedErrors && S.org.trim().length<2 ? `<div class="err-msg">Вкажіть назву організації.</div>`:""}
+    <div class="code-row">
+      <span class="code-label">Код організації</span>
+      <span class="code">${esc(S.code)}</span>
+    </div>
+    <div class="q-hint" style="margin-top:8px">${S.codeFromLink
+      ? "Ви перейшли за запрошенням — код підставлено автоматично. Саме він зводить ваші відповіді з відповідями колег."
+      : "Відповіді колег зводяться в одну картину за цим кодом. Наприкінці ви отримаєте посилання з ним, щоб надіслати колегам."}</div>
   </div>
   <div class="q">
     <div class="q-n">C2</div>
@@ -672,6 +737,8 @@ function contextHtml(){
       ${S.c2==="other"?`<div class="free"><input type="text" data-cfree="c2" value="${esc(S.c2_free)}" placeholder="Ваша функція"></div>`:""}
     </div>
     ${showedErrors && !S.c2 ? `<div class="err-msg">Оберіть варіант.</div>`:""}
+    ${timeEstimate() ? `<div class="q-hint" style="margin-top:10px">Для вашої ролі анкета
+      займає ${timeEstimate()}. Можна перервати й повернутись — відповіді зберігаються.</div>`:""}
   </div>
   <div class="q">
     <div class="q-n">C4</div>
@@ -708,33 +775,74 @@ function contextHtml(){
 function intro(){
   return `<div class="brand">AInoia</div>
   <h1>AI Readiness Diagnostic</h1>
-  <p class="lead">Опитування визначає, де ваша організація перебуває на шляху впровадження
-  ШІ — і що конкретно потрібно, щоб перейти на наступну сходинку.</p>
-  <div class="note">
-    <p><strong>У цьому опитуванні «ШІ»</strong> охоплює генеративний ШІ, AI-copilots, машинне
-    навчання, AI-автоматизацію, AI-агентів та інші системи, що використовують методи
-    штучного інтелекту.</p>
-  </div>
+  <p class="lead">Де ваша організація насправді на шляху до ШІ — і що саме заважає зробити
+  наступний крок.</p>
+  <p class="hook">Керівництво, бізнес, IT, ризики та HR відповідають на ті самі питання
+  окремо. Де їхні оцінки розходяться — там і є справжня картина. Свою оцінку ви побачите
+  одразу, а зведену діагностику організації підготує консультант AInoia.</p>
+  <div class="invite-ctx">${S.codeFromLink
+    ? (S.invitedBy
+        ? `<span>Вас запросив(ла)</span><strong>${esc(S.invitedBy)}</strong><span>як одного з респондентів вашої організації. Код</span><span class="code">${esc(S.code)}</span><span>звʼяже ваші відповіді з відповідями колег — ваших відповідей ніхто з них не побачить.</span>`
+        : `<span>Вас запросили як одного з респондентів вашої організації. Код</span><span class="code">${esc(S.code)}</span><span>звʼяже ваші відповіді з відповідями колег — ваших відповідей ніхто з них не побачить.</span>`)
+    : S.org ? `<span>Організація:</span><strong>${esc(S.org)}</strong>`
+            : `<span>Ви починаєте діагностику своєї організації. Наприкінці отримаєте посилання для колег: чим більше функцій відповість, тим точнішою буде картина.</span>`}</div>
   <div class="card">
-    <h3>Що варто знати перед початком</h3>
-    <p class="muted">Опитування проходять представники різних функцій — керівництво, бізнес,
-    IT, ризики, HR. Цінність дає саме порівняння їхніх відповідей: розбіжність в оцінках
-    між функціями сама по собі є діагнозом.</p>
-    <p class="muted">Відповідайте про <strong>фактичний стан</strong>, а не про плани чи
-    бажаний. «Не знаю» — нормальна відповідь: вона не знижує бал, а виключається з
-    розрахунку й впливає на достовірність оцінки.</p>
-    <p class="muted" style="margin-bottom:0">Близько 25–30 хвилин. Відповіді зберігаються у
-    вашому браузері, тож сторінку можна перезавантажити без втрати відповідей.</p>
+    <h2 class="card-h">Перед початком</h2>
+    <p class="muted">Відповідайте про те, <strong>як є зараз</strong>, а не про плани чи
+    бажане. «Не знаю» — нормальна відповідь: вона не знижує бал, а лише позначає, де
+    організації бракує прозорості. Це теж результат.</p>
+    <p class="muted"><strong>Що ви отримаєте.</strong> Одразу після завершення — вашу особисту
+    оцінку за доменами. Коли відповість решта команди — зведену діагностику організації:
+    профіль за доменами, розрив між функціями та умови переходу на наступний рівень.</p>
+    <p class="muted" style="margin-bottom:0">Приблизно 25–35 хвилин, залежно від вашої ролі.
+    Це можна робити частинами: відповіді зберігаються у цьому браузері — закрийте сторінку
+    й поверніться, коли буде зручно.</p>
   </div>
-  <div class="nav"><button class="primary" id="go">Почати</button></div>
+  <p class="tiny" style="margin:-6px 0 18px">У цьому опитуванні «ШІ» охоплює генеративний ШІ,
+  AI-copilots, машинне навчання, AI-автоматизацію, AI-агентів та інші системи, що
+  використовують методи штучного інтелекту.</p>
+  <div class="note">
+    <p>Ваші відповіді бачить лише консультант AInoia. Колеги бачать тільки власну оцінку.
+    Дані зберігаються в ЄС. Повний текст — нижче.</p>
+  </div>
+  ${privacyHtml()}
+  <label class="consent">
+    <input type="checkbox" id="consent" ${S.consentAt?"checked":""}>
+    <span>Погоджуюся на обробку моїх відповідей для підготовки діагностики організації.
+    Повідомлення про обробку даних прочитав(ла).</span>
+  </label>
+  <div class="nav"><button class="primary" id="go" ${S.consentAt?"":"disabled"}>Почати діагностику</button></div>
   <p class="tiny" style="margin-top:22px">AI Maturity Assessment v${VERSION} · методологія AInoia
-  Evolution Path. Це структурована діагностика, а не валідована наукова модель зрілості.</p>`;
+  Evolution Path.</p>`;
+}
+
+function privacyHtml(){
+  return `<details class="privacy">
+    <summary>Як обробляються ваші відповіді</summary>
+    <ul>
+      <li><strong>Хто обробляє.</strong> ${CONTROLLER} (бренд AInoia), контакт: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</li>
+      <li><strong>Що збирається.</strong> Назва організації, ваша роль і функція, відповіді на
+        питання анкети, час заповнення. Email — лише якщо ви самі вкажете його наприкінці.</li>
+      <li><strong>Навіщо.</strong> Щоб звести відповіді представників різних функцій в
+        діагностику організації та повернути її вам і вашим колегам.</li>
+      <li><strong>Кому видно.</strong> Консультанту AInoia. Інші респонденти вашої організації
+        бачать лише власну оцінку. Відповіді не передаються третім сторонам.</li>
+      <li><strong>Де зберігаються.</strong> У базі даних у ЄС (Франкфурт); копія відповідей
+        лишається у вашому браузері, доки ви її не видалите.</li>
+      <li><strong>Як довго.</strong> ${RETENTION_TEXT}.</li>
+      <li><strong>Ваші права.</strong> Ви можете попросити показати, виправити або видалити
+        ваші відповіді — напишіть на ${CONTACT_EMAIL}. Відкликати згоду можна в будь-який момент.</li>
+    </ul>
+  </details>`;
 }
 
 function render(){
   const app = $("#app"), bar = $("#bar");
   if (step === -1){ bar.hidden = true; app.innerHTML = intro();
-    $("#go").onclick = () => { step = 0; showedErrors = false; render(); }; save(); return; }
+    $("#consent").onchange = e => { S.consentAt = e.target.checked ? new Date().toISOString() : null;
+      $("#go").disabled = !S.consentAt; save(); };
+    $("#go").onclick = () => { if (!S.consentAt) return; step = 0; showedErrors = false; render(); };
+    save(); return; }
 
   const act = activeSteps();
   if (step >= STEPS.length){ bar.hidden = true; app.innerHTML = resultHtml(); bindResult(); return; }
@@ -757,7 +865,8 @@ function render(){
     </div>`;
 
   bind();
-  window.scrollTo({top:0, behavior:"instant"});
+  if (renderedStep !== step) window.scrollTo({top:0, behavior:"instant"});
+  renderedStep = step;
 }
 
 function bind(){
@@ -873,6 +982,8 @@ function resultHtml(){
     <div class="muted" style="margin-top:6px">із 5.00 · індекс ${idx === null ? "—" : idx}/100</div>
     <div class="lvl">${lv ? esc(lv[3]) : "Недостатньо даних"}</div>
     <div class="muted">${lv ? "Рівень " + lv[2] + " за шкалою AInoia Evolution Path" : ""}</div>
+    <p class="tiny" style="margin:16px 0 0">Це структурована діагностика за методологією
+    AInoia Evolution Path, а не валідована наукова модель зрілості.</p>
   </div>
 
   <div class="note" style="margin-top:18px">
@@ -907,6 +1018,39 @@ function resultHtml(){
   </div>
 
   <div id="sendStatus"></div>
+
+  <div class="card">
+    <h3>Запросіть колег</h3>
+    <p class="muted">Діагностика працює лише тоді, коли відповідають кілька функцій:
+    керівництво, бізнес, IT, ризики, HR. Надішліть це посилання колегам — їхні відповіді
+    зведуться з вашими за кодом <span class="code">${esc(S.code)}</span>.</p>
+    <div class="invite">
+      <input type="text" id="invite" value="${esc(inviteLink())}" readonly>
+      <button class="ghost" id="copy">Скопіювати</button>
+    </div>
+    <p class="tiny" style="margin:12px 0 0">Якщо вкажете імʼя нижче, воно додасться в
+    посилання — колеги побачать, хто їх запросив.</p>
+  </div>
+
+  <div class="card" id="leadCard">
+    <h3>Отримати зведення по організації</h3>
+    ${S.lead === "ok"
+      ? `<div class="status ok">Дякуємо. Коли відповість решта команди, консультант надішле зведення на ${esc(S.email)}.</div>`
+      : `<p class="muted">Залиште email — і коли відповість решта команди, ви отримаєте профіль
+         організації за доменами, розрив між функціями та умови переходу на наступний рівень.</p>
+         <div class="lead-form">
+           <input type="text" id="name" value="${esc(S.name)}" placeholder="Ім'я (необов'язково)" autocomplete="name">
+           <input type="text" id="email" class="${S.lead==="bad"?"err":""}" value="${esc(S.email)}"
+                  placeholder="Робочий email" autocomplete="email" inputmode="email">
+           <button class="primary" id="lead" ${S.sent==="ok"?"":"disabled"}>Надіслати</button>
+         </div>
+         ${S.lead==="bad"  ? `<div class="err-msg">Перевірте адресу email.</div>` : ""}
+         ${S.lead==="err"  ? `<div class="status bad">Не вдалося зберегти контакт. Напишіть нам на ${CONTACT_EMAIL}.</div>` : ""}
+         ${S.lead==="wait" ? `<div class="status wait">Зберігаємо…</div>` : ""}
+         ${S.sent!=="ok"   ? `<p class="tiny" style="margin-top:10px">Стане доступним після того, як відповіді збережуться на сервері.</p>` : ""}
+         <p class="tiny" style="margin-top:10px">Email використовується лише для надсилання зведення. Без розсилок.</p>`}
+  </div>
+
   <div class="nav">
     <button class="ghost" id="dl">Зберегти копію відповідей</button>
   </div>
@@ -915,7 +1059,38 @@ function resultHtml(){
 
 function bindResult(){
   $("#dl").onclick = download;
+  $("#copy").onclick = () => {
+    const inp = $("#invite"); inp.select();
+    const done = () => { $("#copy").textContent = "Скопійовано"; setTimeout(() => { const b = $("#copy"); if (b) b.textContent = "Скопіювати"; }, 1800); };
+    if (navigator.clipboard) navigator.clipboard.writeText(inp.value).then(done, () => document.execCommand("copy") && done());
+    else { document.execCommand("copy"); done(); }
+  };
+  const em = $("#email"), nm = $("#name"), btn = $("#lead");
+  if (em){ em.oninput = e => { S.email = e.target.value; save(); }; }
+  if (nm){ nm.oninput = e => { S.name = e.target.value; save();
+    const inv = $("#invite"); if (inv) inv.value = inviteLink(); }; }
+  if (btn){ btn.onclick = sendLead; }
   setStatus(S.sent);
+}
+
+/* --- контакт: окремий insert у diagnostic.contacts, прив'язаний до response_id --- */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function sendLead(){
+  const email = S.email.trim();
+  if (!EMAIL_RE.test(email) || email.length > 254){ S.lead = "bad"; render(); return; }
+  if (S.sent !== "ok" || !S.id) return;
+  S.lead = "wait"; render();
+  anonToken().then(tok => fetch(API_URL.replace(/\/+$/, "") + "/contacts", {
+    method:"POST",
+    headers: Object.assign({"Content-Type":"application/json","Prefer":"return=minimal"},
+                           tok ? {"Authorization":"Bearer " + tok} : {}),
+    body: JSON.stringify({response_id: S.id, org_code: S.code, email,
+                          name: S.name.trim() || null, consent_version: CONSENT_VERSION}),
+  })).then(r => {
+    S.lead = r.ok ? "ok" : "err";
+    if (!r.ok) console.error("POST /contacts", r.status);
+    save(); render();
+  }).catch(e => { console.error(e); S.lead = "err"; save(); render(); });
 }
 function setStatus(state){
   const el = $("#sendStatus"); if (!el) return;
@@ -941,9 +1116,14 @@ function payload(){
     }
   }
   const fn = FUNCTIONS.find(f => f[0] === S.c2);
+  if (!S.id) S.id = crypto.randomUUID();   // id генерує сторінка: до нього прив'язується контакт
   return {
+    id: S.id,
     version: VERSION,
     org_name: S.org.trim(),
+    org_code: S.code,
+    consent_at: S.consentAt,
+    consent_version: CONSENT_VERSION,
     role_group: roleGroup(),
     c1_role: S.c1 === "free" ? S.c1_free : S.c1,
     c2_function: S.c2 === "other" ? (S.c2_free || "Інше") : (fn ? fn[1] : S.c2),
@@ -976,8 +1156,8 @@ function submit(){
   })).then(r => {
     S.sent = r.ok ? "ok" : "err";
     if (!r.ok) console.error("POST /responses", r.status);
-    setStatus(S.sent); save();
-  }).catch(e => { console.error(e); S.sent = "err"; setStatus("err"); save(); });
+    save(); render();                        // render, а не setStatus: оживає кнопка контакту
+  }).catch(e => { console.error(e); S.sent = "err"; save(); render(); });
 }
 
 function download(){
@@ -1002,9 +1182,22 @@ function restore(){
 /* --- старт ------------------------------------------------------------------ */
 restore();
 const qs = new URLSearchParams(location.search);
-if (qs.get("org") && !S.org) S.org = qs.get("org");
+function applyOrgParam(){
+  const v = (qs.get("org") || "").trim();
+  if (!v) return;
+  if (CODE_RE.test(v.toUpperCase())){ S.code = v.toUpperCase(); S.codeFromLink = true; }
+  else if (!S.org) S.org = v;              // старі посилання з назвою організації
+}
+/* Ім'я того, хто запросив: ?from=Олена Петренко — для довіри на титульній. */
+function applyFromParam(){
+  const v = (qs.get("from") || "").trim().replace(/\s+/g, " ").slice(0, 60);
+  if (v) S.invitedBy = v;
+}
 if (qs.get("reset") !== null){ try { localStorage.removeItem(KEY); } catch(e){}
-  Object.assign(S, {org:qs.get("org")||"", c1:"", c2:"", c3:null, c4:null, c5:[], ans:{}, ev:{}, free:{}, sent:null});
+  Object.assign(S, {org:"", code:"", codeFromLink:false, invitedBy:"", consentAt:null, id:null, c1:"", c2:"", c3:null, c4:null, c5:[],
+                    ans:{}, ev:{}, free:{}, sent:null, email:"", name:"", lead:null});
   step = -1; }
+if (S.sent === null){ applyOrgParam(); applyFromParam(); }   // після надсилання код зафіксовано
+if (!S.code) S.code = genCode();
 render();
 </script>

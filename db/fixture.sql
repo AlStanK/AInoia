@@ -30,9 +30,11 @@ begin
   end loop;
 
   insert into diagnostic.responses
-    (org_name, role_group, c1_role, c2_function, c3_scope, c4_awareness,
+    (org_name, org_code, consent_at, consent_version,
+     role_group, c1_role, c2_function, c3_scope, c4_awareness,
      c5_types, answers, evidence, agentic_shown, score)
-  values (p_org, p_group, 'Керівник підрозділу', p_group,
+  values (p_org, upper(left(md5(diagnostic.org_key(p_org)), 8)), now(), 'fixture',
+     p_group, 'Керівник підрозділу', p_group,
      case when p_group = 'executive' then 5 else 3 end,
      case when p_group = 'executive' then 4 else 3 end,
      '["public_genai","copilots"]'::jsonb, base,
