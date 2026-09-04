@@ -20,6 +20,7 @@ begin
 end $$;
 
 grant usage  on schema diagnostic     to anonymous;
+revoke all privileges on diagnostic.responses, diagnostic.contacts from anonymous;
 grant insert on diagnostic.responses  to anonymous;
 grant insert on diagnostic.contacts   to anonymous;
 

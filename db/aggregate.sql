@@ -15,6 +15,23 @@ select r.*,
        coalesce(nullif(btrim(r.org_key_merge), ''), r.org_key) as org
 from diagnostic.responses r;
 
+-- Флаги фактів v2 — окремий reader-only зріз для консультанта. Вони не
+-- беруть участі в агрегації: усі домени, Confidence, evidence і gates далі
+-- рахуються виключно з числового контракту answers.
+create or replace view diagnostic.v_fact_flags as
+select r.org,
+       r.id as response_id,
+       f.question,
+       coalesce(r.facts -> f.question -> 'checked', '[]'::jsonb) as checked,
+       f.flags,
+       r.created_at,
+       r.role_group
+from diagnostic.v_responses r
+cross join lateral jsonb_each(r.facts_flags) as f(question, flags)
+where r.version = '2.0'
+  and jsonb_typeof(f.flags) = 'array'
+  and jsonb_array_length(f.flags) > 0;
+
 -- Кандидати на злиття: різні коди, але схожа назва організації.
 -- Так буває, коли колега не отримав посилання-запрошення і сторінка
 -- згенерувала йому власний код.

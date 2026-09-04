@@ -30,10 +30,10 @@ begin
   end loop;
 
   insert into diagnostic.responses
-    (org_name, org_code, consent_at, consent_version,
+    (version, org_name, org_code, consent_at, consent_version,
      role_group, c1_role, c2_function, c3_scope, c4_awareness,
      c5_types, answers, evidence, agentic_shown, score)
-  values (p_org, upper(left(md5(diagnostic.org_key(p_org)), 8)), now(), 'fixture',
+  values ('1.2', p_org, upper(left(md5(diagnostic.org_key(p_org)), 8)), now(), 'fixture',
      p_group, 'Керівник підрозділу', p_group,
      case when p_group = 'executive' then 5 else 3 end,
      case when p_group = 'executive' then 4 else 3 end,
@@ -79,6 +79,39 @@ select diagnostic.__seed('ТОВ «Ромашка»', 'risk', -0.5, false,
 -- People
 select diagnostic.__seed('ТОВ «Ромашка»', 'people', -0.2, false,
   '{exec_owner,usecase_owner}', '{personal,support_functions}', '{}', '{policy}', '{}');
+
+-- v2: неперервний ланцюг, розрив, «нічого з цього» та «не знаю».
+insert into diagnostic.responses
+  (version, org_name, org_code, consent_at, consent_version,
+   role_group, c1_role, c2_function, c3_scope, c4_awareness, c5_types,
+   answers, facts, facts_flags, agentic_shown)
+values
+  ('2.0', 'ТОВ «Факти»', 'FACTS2', now(), 'fixture',
+   'business', 'Керівник підрозділу', 'business', 3, 3,
+   '["public_genai"]'::jsonb,
+   '{"q1":3,"q2":3,"q3":1,"q4":null}'::jsonb,
+   '{"q1":{"checked":[2,3],"none":false,"unknown":false},
+     "q2":{"checked":[2,3,5],"none":false,"unknown":false},
+     "q3":{"checked":[],"none":true,"unknown":false},
+     "q4":{"checked":[],"none":false,"unknown":true}}'::jsonb,
+   '{"q2":[5]}'::jsonb,
+   false);
+
+do $$
+declare r diagnostic.responses%rowtype;
+begin
+  select * into r from diagnostic.responses
+  where org_code = 'FACTS2' and version = '2.0'
+  order by created_at desc limit 1;
+
+  if r.id is null
+     or r.answers ->> 'q1' <> '3'
+     or r.answers ->> 'q2' <> '3'
+     or r.answers ->> 'q3' <> '1'
+     or jsonb_typeof(r.answers -> 'q4') <> 'null' then
+    raise exception 'v2 fixture must store answers q1=3, q2=3, q3=1, q4=json null';
+  end if;
+end $$;
 
 drop function diagnostic.__seed(text, text, numeric, boolean, text[], text[], text[], text[], text[]);
 
