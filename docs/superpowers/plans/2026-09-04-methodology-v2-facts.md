@@ -217,7 +217,7 @@ test("факт не має починатись із заперечення", ()
 - [ ] **Step 2: Запустити — має впасти**
 
 ```bash
-cd /Users/aleksand/Work/AInoia/code/ai-readiness-diagnostic && node --test methodology/
+cd /Users/aleksand/Work/AInoia/code/ai-readiness-diagnostic && node --test 'methodology/*.test.mjs'
 ```
 Expected: FAIL, `Cannot find module './validate-facts.mjs'`.
 
@@ -288,7 +288,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 - [ ] **Step 4: Тести мають пройти**
 
 ```bash
-node --test methodology/
+node --test 'methodology/*.test.mjs'
 ```
 Expected: `# pass 10`, `# fail 0`.
 
@@ -343,7 +343,7 @@ Expected: 35 рядків `qN: має бути 4 факти, є 0`, `exit=1`.
 
 - `v2-facts.json` — канон фактів AI Maturity Assessment v2.0: 35 драбинних питань × 4 факти (рівні 2–5). Сторінка читає його при збірці (підпроєкт 2).
 - `v1.2-ladders.md` — згенерований довідник драбин v1.2 (`node methodology/extract-v1.mjs`). Не редагувати.
-- `validate-facts.mjs` — валідатор: `node methodology/validate-facts.mjs`. Тести: `node --test methodology/`.
+- `validate-facts.mjs` — валідатор: `node methodology/validate-facts.mjs`. Тести: `node --test 'methodology/*.test.mjs'`.
 
 ## Правило виведення рівня
 
@@ -557,7 +557,7 @@ git push origin feat/deploy-neon-pages
 - [ ] **Step 3: Повна валідація**
 
 ```bash
-node methodology/validate-facts.mjs && node --test methodology/
+node methodology/validate-facts.mjs && node --test 'methodology/*.test.mjs'
 ```
 Expected: `ok: 35 питань, 140 фактів`, тести `# fail 0`.
 

@@ -3,7 +3,7 @@
 
 - `v2-facts.json` — канон фактів AI Maturity Assessment v2.0: 35 драбинних питань × 4 факти (рівні 2–5). Сторінка читає його при збірці (підпроєкт 2).
 - `v1.2-ladders.md` — згенерований довідник драбин v1.2 (`node methodology/extract-v1.mjs`). Не редагувати.
-- `validate-facts.mjs` — валідатор: `node methodology/validate-facts.mjs`. Тести: `node --test methodology/`.
+- `validate-facts.mjs` — валідатор: `node methodology/validate-facts.mjs`. Тести: `node --test 'methodology/*.test.mjs'`.
 
 ## Правило виведення рівня
 
