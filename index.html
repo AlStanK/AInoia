@@ -198,9 +198,10 @@ button:active{transform:scale(.97)}
 .primary:hover{background:var(--tan-bright)}
 .ghost{background:var(--surface-raised);color:var(--foreground);border-color:var(--border-strong)}
 .ghost:hover{background:var(--surface-sunken)}
-.link-btn{display:inline;height:auto;padding:0;background:none;border:0;font:inherit;font-weight:600;
+.link-btn{display:inline-flex;align-items:center;min-height:44px;height:auto;padding:0;background:none;border:0;font:inherit;font-weight:600;
   color:var(--accent-text);text-decoration:underline;text-underline-offset:2px}
 .link-btn:hover{color:var(--tan-deep)}
+.q-hint.inline-action{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;margin:-6px 0 4px}
 .spacer{flex:1}
 button[disabled]{opacity:.5;cursor:not-allowed;transform:none}
 
@@ -548,8 +549,8 @@ function contextHtml(){
     <div class="q-hint" style="margin-top:8px">${S.codeFromLink
       ? "Ви перейшли за запрошенням — код підставлено автоматично. Саме він зводить ваші відповіді з відповідями колег."
       : "Відповіді колег зводяться в одну картину за цим кодом. Наприкінці ви отримаєте посилання з ним, щоб надіслати колегам."}</div>
-    ${!S.codeFromLink ? `<div class="q-hint" style="margin-top:4px">
-      Заповнюєте анкету для іншої організації? <button type="button" class="link-btn" id="newOrg">Розпочати нову анкету</button>
+    ${!S.codeFromLink ? `<div class="q-hint inline-action">
+      <span>Заповнюєте анкету для іншої організації?</span> <button type="button" class="link-btn" id="newOrg">Розпочати нову анкету</button>
     </div>` : ""}
   </div>
   <div class="q">
@@ -631,7 +632,8 @@ function intro(){
     <span>Погоджуюся на обробку моїх відповідей для підготовки діагностики організації.
     Повідомлення про обробку даних прочитав(ла).</span>
   </label>
-  <div class="nav"><button class="primary" id="go" ${S.consentAt?"":"disabled"}>Почати діагностику</button></div>
+  <div class="nav"><button class="primary" id="go" aria-describedby="goHint" ${S.consentAt?"":"disabled"}>Почати діагностику</button></div>
+  <p class="tiny" id="goHint" style="margin:8px 0 0" ${S.consentAt?"hidden":""}>Щоб почати, підтвердьте згоду вище.</p>
   <p class="tiny" style="margin-top:22px">AI Maturity Assessment v${VERSION} · методологія AInoia
   Evolution Path.</p>`;
 }
@@ -639,7 +641,9 @@ function intro(){
 
 function privacyHtml(){
   const visibility = "Керівництво вашої організації отримає лише зведений звіт. Індивідуальні відповіді, ролі й імена бачить обмежене коло консультантів AInoia — і ніхто у вашій організації.";
-  return `<details class="privacy">
+  /* Відкрито за замовчуванням: згода нижче посилається на це повідомлення,
+     тож текст має бути видимим, а не схованим під summary. Згортається. */
+  return `<details class="privacy" open>
     <summary>Як обробляються ваші відповіді</summary>
     <ul>
       <li><strong>Хто обробляє.</strong> ${CONTROLLER}, контакт: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</li>
@@ -664,7 +668,7 @@ function render(){
   const app = $("#app"), bar = $("#bar");
   if (step === -1){ bar.hidden = true; app.innerHTML = intro();
     $("#consent").onchange = e => { S.consentAt = e.target.checked ? new Date().toISOString() : null;
-      $("#go").disabled = !S.consentAt; save(); };
+      $("#go").disabled = !S.consentAt; $("#goHint").hidden = !!S.consentAt; save(); };
     $("#go").onclick = () => { if (!S.consentAt) return; step = 0; showedErrors = false; render(); };
     save(); return; }
 
@@ -1047,9 +1051,16 @@ function save(){
   catch(e){ draftSaved = false; }
   updateDraftStatus();
 }
+function hasDraftContent(){
+  return !!(S.org.trim() || S.c1 || S.c2 || S.c3 || S.c4 || S.c5.length
+    || Object.keys(S.ans).length || Object.keys(S.facts).length || Object.keys(S.ev).length);
+}
 function updateDraftStatus(){
   const el = $("#draftStatus");
-  if (el) el.textContent = draftSaved === false ? "Чернетку не збережено. Не закривайте вкладку." : draftSaved === true ? "Чернетку збережено у браузері" : "";
+  if (!el) return;
+  el.textContent = draftSaved === false ? "Чернетку не збережено. Не закривайте вкладку."
+    : draftSaved === true && hasDraftContent() ? "Чернетку збережено у браузері"
+    : "Відповіді зберігаються автоматично";
 }
 function restore(){
   try {
