@@ -13,7 +13,7 @@ function runWithSavedCoordinator(url) {
   const saved = JSON.stringify({
     S: {org:"Coordinator Org", code:"OLD12345", codeFromLink:false, consentAt:"2026-09-04T00:00:00.000Z",
       id:"response-id", c1:"Менеджер", c2:"ops", c3:1, c4:1, c5:["copilots"], ans:{}, facts:{}, ev:{},
-      free:{}, started:0, sent:"ok", email:"coordinator@example.test", name:"Coordinator", lead:null},
+      free:{}, started:0, sent:"ok", name:"Coordinator"},
     step: 9,
   });
   const context = {
@@ -40,12 +40,10 @@ test("valid respondent URL overrides a completed saved coordinator session", () 
   assert.match(html, /Вас запросив\(ла\).*Олена/s);
   assert.doesNotMatch(html, /id="invite"/);
   assert.doesNotMatch(html, /id="name"/);
-  assert.doesNotMatch(html, /id="email"/);
 });
 
 test("coordinator resume without org keeps coordinator controls", () => {
   const html = runWithSavedCoordinator("https://diagnostic.test/");
   assert.match(html, /id="invite"/);
   assert.match(html, /id="name"/);
-  assert.match(html, /id="email"/);
 });
